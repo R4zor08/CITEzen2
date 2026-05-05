@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # CITEzen
 
 CITEzen was developed to bridge the gap between students and the administration. We understand that navigating university processes can sometimes be confusing and time-consuming.
@@ -28,3 +29,6 @@ Browse tables: `cd server && npx prisma studio`. See `server/README.md` for endp
 Convenience (from repo root): `npm run server:dev` after the one-time `server` setup above.
 
 The frontend calls the API at `VITE_API_URL` (default `http://localhost:3001`). Run **both** `npm run server:dev` and `npm run dev` for full functionality.
+=======
+# CITEzen2
+>>>>>>> 7d7d168f8f22206a1933d3a4e8d6d23fbd750e8e
