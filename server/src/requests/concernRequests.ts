@@ -13,7 +13,7 @@ export const createConcernRequestSchema = z.object({
   studentId: z.string().optional(),
   studentName: z.string().optional(),
   department: z.string().optional(),
-  formData: z.record(z.unknown()).optional(),
+  formData: z.record(z.string(), z.unknown()).optional(),
   attachments: z.array(z.string()).optional()
 });
 export type CreateConcernRequest = z.infer<typeof createConcernRequestSchema>;

@@ -15,6 +15,6 @@ export async function markAllRead(userId: string) {
 
 export async function clear(userId: string) {
   const r = await notifications.clearNotifications(userId);
-  return { ok: true as const, count: r.count };
+  return { ok: true as const, count: r.deletedCount ?? 0 };
 }
 

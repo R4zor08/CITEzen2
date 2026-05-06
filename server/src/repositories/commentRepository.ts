@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma.js';
+import { CommentModel } from '../models/CommentModel.js';
 
 export async function createComment(data: {
   concernId: string;
@@ -8,6 +8,6 @@ export async function createComment(data: {
   content: string;
   visibleTo: string;
 }) {
-  return prisma.comment.create({ data });
+  return CommentModel.create(data);
 }
 

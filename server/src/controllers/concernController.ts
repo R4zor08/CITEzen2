@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
-import type { Prisma } from '@prisma/client';
-import { commentToApi, concernToApi, statusFromApi } from '../mappers.js';
+import { commentToApi, concernToApi } from '../mappers.js';
 import { addCommentRequestSchema, createConcernRequestSchema, forwardConcernRequestSchema, updateConcernRequestSchema } from '../requests/concernRequests.js';
 import type { Role } from '../types.js';
 import * as concernService from '../services/concernService.js';
@@ -8,12 +7,6 @@ import * as concernService from '../services/concernService.js';
 export async function listConcerns(req: Request, res: Response) {
   try {
     const { studentId, department, assignedToId, status } = req.query;
-    const where: Prisma.ConcernWhereInput = {};
-
-    if (typeof studentId === 'string') where.studentId = studentId;
-    if (typeof department === 'string') where.department = department;
-    if (typeof assignedToId === 'string') where.assignedToId = assignedToId;
-    if (typeof status === 'string') where.status = statusFromApi(status);
 
     const list = await concernService.listConcerns({
       studentId: typeof studentId === 'string' ? studentId : undefined,

@@ -1,14 +1,13 @@
-# CITEzen API (Node.js + Prisma + SQLite)
+# CITEzen API (Node.js + Express + MongoDB)
 
 ## Setup
 
 ```bash
 cd server
 npm install
-cp .env.example .env   # optional; defaults match SQLite file prisma/dev.db
-npx prisma generate
-npx prisma db push
-npm run db:seed
+cp .env.example .env
+# set MONGODB_URI in .env (Atlas or local MongoDB)
+npm run mongo:seed
 ```
 
 Default seeded admin (change in production):
@@ -23,14 +22,6 @@ npm run dev
 ```
 
 API base: `http://localhost:3001` (override with `PORT` in `.env`).
-
-## Browse data
-
-```bash
-npx prisma studio
-```
-
-Opens a GUI to view and edit all tables.
 
 ## Endpoints (summary)
 

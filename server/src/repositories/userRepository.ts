@@ -1,34 +1,36 @@
-import type { Prisma, User } from '@prisma/client';
-import { prisma } from '../lib/prisma.js';
+import { UserModel } from '../models/UserModel.js';
+import type { Role } from '../types.js';
 
-export async function findUserForLogin(args: { role: 'student' | 'staff' | 'admin'; identifier: string }) {
+export async function findUserForLogin(args: { role: Role | 'student' | 'staff' | 'admin'; identifier: string }) {
   const { role, identifier } = args;
-  return role === 'student'
-    ? prisma.user.findFirst({ where: { studentId: identifier, role: 'student' } })
-    : prisma.user.findFirst({ where: { email: identifier, role } });
+  // Login rules:
+  // - students use Student ID
+  // - staff/admin use email
+  if (role === 'student') return UserModel.findOne({ studentId: identifier, role: 'student' });
+  return UserModel.findOne({ email: identifier, role });
 }
 
 export async function findUserById(id: string) {
-  return prisma.user.findUnique({ where: { id } });
+  return UserModel.findById(id);
 }
 
 export async function findUserByStudentId(studentId: string) {
-  return prisma.user.findFirst({ where: { studentId } });
+  return UserModel.findOne({ studentId });
 }
 
 export async function findUserByEmail(email: string) {
-  return prisma.user.findFirst({ where: { email } });
+  return UserModel.findOne({ email });
 }
 
 export async function listUsers() {
-  return prisma.user.findMany({ orderBy: { createdAt: 'asc' } });
+  return UserModel.find().sort({ createdAt: 1 });
 }
 
-export async function createUser(data: Prisma.UserCreateInput): Promise<User> {
-  return prisma.user.create({ data });
+export async function createUser(data: any) {
+  return UserModel.create(data);
 }
 
-export async function updateUserById(id: string, data: Prisma.UserUpdateInput): Promise<User> {
-  return prisma.user.update({ where: { id }, data });
+export async function updateUserById(id: string, data: any) {
+  return UserModel.findByIdAndUpdate(id, data, { new: true });
 }
 

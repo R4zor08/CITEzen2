@@ -26,6 +26,4 @@ dist-ssr
 *.sln
 *.sw?
 
-# Server — local SQLite
-server/prisma/*.db
-server/prisma/*.db-journal
+# Server - MongoDB (keep env local-only)

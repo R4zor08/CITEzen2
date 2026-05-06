@@ -2,6 +2,27 @@ import { useState, useEffect } from 'react';
 import { User, Role } from '../types';
 import { apiJson } from '../lib/api';
 
+function normalizeStoredUser(raw: unknown): User | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const anyRaw = raw as any;
+  const base = anyRaw._doc && typeof anyRaw._doc === 'object' ? anyRaw._doc : anyRaw;
+  const role = base.role as Role | undefined;
+  if (!role || (role !== 'student' && role !== 'staff' && role !== 'admin')) return null;
+
+  return {
+    id: base.id ?? (base._id ? String(base._id) : ''),
+    name: base.name ?? '',
+    email: base.email ?? '',
+    role,
+    studentId: base.studentId ?? undefined,
+    course: base.course ?? undefined,
+    department: base.department ?? undefined,
+    profilePicture: base.profilePicture ?? undefined,
+    createdAt: base.createdAt ?? undefined,
+    updatedAt: base.updatedAt ?? undefined
+  };
+}
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -10,7 +31,8 @@ export function useAuth() {
     const storedUser = localStorage.getItem('citezen_user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setUser(normalizeStoredUser(parsed));
       } catch {
         console.error('Failed to parse stored user');
       }
@@ -33,17 +55,27 @@ export function useAuth() {
       throw new Error('Password must be at least 6 characters long.');
     }
 
+    const payload: Record<string, unknown> = {
+      name: userData.name,
+      password: userData.password,
+      role: userData.role ?? 'student'
+    };
+
+    const email = userData.email?.trim();
+    if (email) payload.email = email;
+
+    const studentId = userData.studentId?.trim();
+    if (studentId) payload.studentId = studentId;
+
+    const course = userData.course?.trim();
+    if (course) payload.course = course;
+
+    const department = userData.department?.trim();
+    if (department) payload.department = department;
+
     await apiJson<{ ok: boolean }>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-        role: userData.role ?? 'student',
-        studentId: userData.studentId,
-        course: userData.course,
-        department: userData.department
-      })
+      body: JSON.stringify(payload)
     });
     return true;
   };

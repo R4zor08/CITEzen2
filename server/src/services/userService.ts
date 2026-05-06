@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import type { Prisma } from '@prisma/client';
 import * as users from '../repositories/userRepository.js';
 
 export async function listUsers() {
@@ -8,7 +7,7 @@ export async function listUsers() {
 
 export async function updateUser(args: { id: string; updates: any }) {
   const { id, updates } = args;
-  const data: Prisma.UserUpdateInput = {};
+  const data: Record<string, unknown> = {};
   if (updates.name !== undefined) data.name = updates.name;
   if (updates.email !== undefined) data.email = updates.email;
   if (updates.department !== undefined) data.department = updates.department;

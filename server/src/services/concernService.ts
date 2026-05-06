@@ -1,4 +1,3 @@
-import type { Prisma } from '@prisma/client';
 import type { Priority, Role } from '../types.js';
 import { statusFromApi } from '../mappers.js';
 import * as concerns from '../repositories/concernRepository.js';
@@ -12,7 +11,7 @@ export async function listConcerns(filters: {
   assignedToId?: string;
   status?: string;
 }) {
-  const where: Prisma.ConcernWhereInput = {};
+  const where: Record<string, unknown> = {};
   if (filters.studentId) where.studentId = filters.studentId;
   if (filters.department) where.department = filters.department;
   if (filters.assignedToId) where.assignedToId = filters.assignedToId;

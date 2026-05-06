@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma.js';
+import { NotificationModel } from '../models/NotificationModel.js';
 
 export async function createNotification(data: {
   userId: string;
@@ -7,25 +7,22 @@ export async function createNotification(data: {
   type: string;
   concernId?: string;
 }) {
-  return prisma.notification.create({ data: { ...data, concernId: data.concernId ?? null } });
+  return NotificationModel.create({ ...data, concernId: data.concernId ?? null });
 }
 
 export async function listNotificationsByUserId(userId: string) {
-  return prisma.notification.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' }
-  });
+  return NotificationModel.find({ userId }).sort({ createdAt: -1 }).exec();
 }
 
 export async function markNotificationRead(id: string) {
-  return prisma.notification.update({ where: { id }, data: { read: true } });
+  return NotificationModel.findByIdAndUpdate(id, { $set: { read: true } }, { new: true }).exec();
 }
 
 export async function markAllNotificationsRead(userId: string) {
-  return prisma.notification.updateMany({ where: { userId, read: false }, data: { read: true } });
+  return NotificationModel.updateMany({ userId, read: false }, { $set: { read: true } }).exec();
 }
 
 export async function clearNotifications(userId: string) {
-  return prisma.notification.deleteMany({ where: { userId } });
+  return NotificationModel.deleteMany({ userId }).exec();
 }
 
