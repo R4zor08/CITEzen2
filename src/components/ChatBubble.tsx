@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 import { toast } from 'sonner';
+import { getApiBase } from '../lib/api';
 import {
   MessageCircleIcon,
   XIcon,
@@ -400,13 +401,6 @@ export function ChatBubble({
   // --- Messaging ---
   const streamGroqCompletion = useCallback(
     async (chatId: string, conversation: Message[]) => {
-      const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-      if (!groqKey) {
-        toast.error('Chat is not configured: set VITE_GROQ_API_KEY in .env');
-        setIsLoading(false);
-        return;
-      }
-
       const controller = new AbortController();
       abortRef.current = controller;
       setIsLoading(true);
@@ -428,13 +422,13 @@ export function ChatBubble({
       });
 
       try {
+        const url = `${getApiBase()}/api/chat/stream`;
         const response = await fetch(
-          'https://api.groq.com/openai/v1/chat/completions',
+          url,
           {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${groqKey}`
+              'Content-Type': 'application/json'
             },
             signal: controller.signal,
             body: JSON.stringify({
@@ -480,7 +474,10 @@ IMPORTANT LANGUAGE INSTRUCTIONS: You are multilingual (English, Tagalog/Filipino
           }
         );
 
-        if (!response.ok) throw new Error('Failed to fetch response');
+        if (!response.ok) {
+          const msg = await response.text().catch(() => '');
+          throw new Error(msg || `Chat request failed (${response.status})`);
+        }
         setIsLoading(false);
         setIsStreaming(true);
         startStreamReveal();
