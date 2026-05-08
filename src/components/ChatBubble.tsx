@@ -493,12 +493,14 @@ export function ChatBubble({
 
       try {
         const url = `${getApiBase()}/api/chat/stream`;
+        const token = localStorage.getItem('citezen_token');
         const response = await fetch(
           url,
           {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
             },
             signal: controller.signal,
             body: JSON.stringify({
@@ -582,7 +584,8 @@ export function ChatBubble({
           const fallback = await fetch(url, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
             },
             signal: controller.signal,
             body: JSON.stringify({

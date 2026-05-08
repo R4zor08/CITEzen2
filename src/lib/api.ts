@@ -11,12 +11,27 @@ export function getApiBase(): string {
   return 'http://localhost:3001'.replace(/\/$/, '');
 }
 
+function getAuthToken(): string | null {
+  try {
+    return localStorage.getItem('citezen_token');
+  } catch {
+    return null;
+  }
+}
+
 export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${getApiBase()}${path.startsWith('/') ? path : `/${path}`}`;
+  const token = getAuthToken();
+  const baseHeaders: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (token) {
+    baseHeaders.Authorization = `Bearer ${token}`;
+  }
   const res = await fetch(url, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      ...baseHeaders,
       ...(init?.headers as Record<string, string> | undefined)
     }
   });
@@ -31,11 +46,23 @@ export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
     }
   }
 
+  if ((data as { success?: boolean })?.success === false) {
+    const errPayload = data as {
+      error?: { message?: string };
+    };
+    throw new Error(errPayload.error?.message ?? `Request failed (${res.status})`);
+  }
+
+  const normalized =
+    (data as { success?: boolean; data?: unknown })?.success === true
+      ? (data as { data: unknown }).data
+      : data;
+
   if (!res.ok) {
     const msg =
-      (data as { error?: string })?.error ?? `Request failed (${res.status})`;
+      (normalized as { error?: string })?.error ?? `Request failed (${res.status})`;
     throw new Error(msg);
   }
 
-  return data as T;
+  return normalized as T;
 }

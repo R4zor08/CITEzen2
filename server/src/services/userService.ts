@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { NotFoundError } from '../http/httpError.js';
 import * as users from '../repositories/userRepository.js';
 
 export async function listUsers() {
@@ -26,6 +27,8 @@ export async function updateUser(args: { id: string; updates: any }) {
   if (updates.password && updates.password.length >= 6) {
     data.passwordHash = await bcrypt.hash(updates.password, 10);
   }
-  return users.updateUserById(id, data);
+  const updated = await users.updateUserById(id, data);
+  if (!updated) throw new NotFoundError('User not found');
+  return updated;
 }
 

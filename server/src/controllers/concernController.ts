@@ -1,136 +1,133 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+import { ok } from '../http/apiResponse.js';
+import { BadRequestError, ForbiddenError, NotFoundError } from '../http/httpError.js';
 import { commentToApi, concernToApi } from '../mappers.js';
-import { addCommentRequestSchema, createConcernRequestSchema, forwardConcernRequestSchema, updateConcernRequestSchema } from '../requests/concernRequests.js';
 import type { Role } from '../types.js';
 import * as concernService from '../services/concernService.js';
 
-export async function listConcerns(req: Request, res: Response) {
+export async function listConcerns(req: Request, res: Response, next: NextFunction) {
   try {
-    const { studentId, department, assignedToId, status } = req.query;
+    const q = (req.validatedQuery ?? req.query) as {
+      studentId?: string;
+      department?: string;
+      assignedToId?: string;
+      status?: string;
+    };
 
     const list = await concernService.listConcerns({
-      studentId: typeof studentId === 'string' ? studentId : undefined,
-      department: typeof department === 'string' ? department : undefined,
-      assignedToId: typeof assignedToId === 'string' ? assignedToId : undefined,
-      status: typeof status === 'string' ? status : undefined
+      studentId: q.studentId,
+      department: q.department,
+      assignedToId: q.assignedToId,
+      status: q.status
     });
-    res.json(list.map(concernToApi));
+    ok(res, list.map(concernToApi));
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Failed to list concerns' });
+    next(e);
   }
 }
 
-export async function getConcern(req: Request, res: Response) {
+export async function getConcern(req: Request, res: Response, next: NextFunction) {
   try {
     const c = await concernService.getConcern(req.params.id);
-    if (!c) {
-      res.status(404).json({ error: 'Not found' });
-      return;
-    }
-    res.json(concernToApi(c));
+    if (!c) throw new NotFoundError('Concern not found');
+    ok(res, concernToApi(c));
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Failed to load concern' });
+    next(e);
   }
 }
 
-export async function createConcern(req: Request, res: Response) {
+export async function createConcern(req: Request, res: Response, next: NextFunction) {
   try {
-    const parsed = createConcernRequestSchema.safeParse(req.body);
-    const b = (parsed.success ? parsed.data : {}) as any;
+    if (!req.user) throw new ForbiddenError('Authentication required');
+    if (req.user.role !== 'student') throw new ForbiddenError('Only students can create concerns');
+    const b = req.body as {
+      title?: string;
+      description?: string;
+      category?: string;
+      subcategory?: string;
+      priority?: 'low' | 'medium' | 'high' | 'urgent';
+      studentId: string;
+      studentName: string;
+      department?: string;
+      formData?: Record<string, unknown>;
+      attachments?: string[];
+    };
 
-    if (!b.studentId || !b.studentName) {
-      res.status(400).json({ error: 'studentId and studentName are required' });
-      return;
+    // Bind ownership to authenticated user.
+    if (req.user.studentId && b.studentId !== req.user.studentId) {
+      throw new ForbiddenError('studentId does not match authenticated user');
     }
 
     const r = await concernService.createConcern(b);
     if ('error' in r) {
-      res.status(400).json({ error: r.error });
-      return;
+      throw new BadRequestError(String(r.error ?? 'Invalid concern request'));
     }
 
-    res.status(201).json(concernToApi(r.concern));
+    ok(res, concernToApi(r.concern), 201);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Failed to create concern' });
+    next(e);
   }
 }
 
-export async function updateConcern(req: Request, res: Response) {
+export async function updateConcern(req: Request, res: Response, next: NextFunction) {
   try {
-    const parsed = updateConcernRequestSchema.safeParse(req.body);
-    const b = (parsed.success ? parsed.data : {}) as Partial<{
+    const concernId = req.params.id;
+    if (!concernId) throw new BadRequestError('concern id is required');
+    const b = req.body as Partial<{
       status: string;
       priority: 'low' | 'medium' | 'high' | 'urgent';
       assignedTo: string | null;
       department: string;
     }>;
 
-    const r = await concernService.updateConcern(req.params.id, b as any);
+    const r = await concernService.updateConcern(concernId, b as any);
     if ('notFound' in r) {
-      res.status(404).json({ error: 'Concern not found' });
-      return;
+      throw new NotFoundError('Concern not found');
     }
-    res.json(concernToApi(r.concern));
+    ok(res, concernToApi(r.concern));
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Failed to update concern' });
+    next(e);
   }
 }
 
-export async function addComment(req: Request, res: Response) {
+export async function addComment(req: Request, res: Response, next: NextFunction) {
   try {
-    const parsed = addCommentRequestSchema.safeParse(req.body);
-    const { content, authorId, visibleTo } = (parsed.success ? parsed.data : {}) as {
-      content?: string;
-      authorId?: string;
+    if (!req.user) throw new ForbiddenError('Authentication required');
+    const concernId = req.params.id;
+    if (!concernId) throw new BadRequestError('concern id is required');
+    const { content, visibleTo } = req.body as {
+      content: string;
       visibleTo?: Role[];
     };
 
-    if (!content?.trim() || !authorId) {
-      res.status(400).json({ error: 'content and authorId are required' });
-      return;
-    }
-
     const r = await concernService.addComment({
-      concernId: req.params.id,
+      concernId,
       content,
-      authorId,
+      authorId: req.user.id,
       visibleTo
     });
 
     if ('error' in r) {
-      res.status(400).json({ error: r.error });
-      return;
+      throw new BadRequestError(String(r.error ?? 'Invalid comment request'));
     }
     if ('notFound' in r) {
-      res.status(404).json({ error: 'Concern not found' });
-      return;
+      throw new NotFoundError('Concern not found');
     }
 
-    res.status(201).json(commentToApi(r.comment));
+    ok(res, commentToApi(r.comment), 201);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Failed to add comment' });
+    next(e);
   }
 }
 
-export async function forwardConcern(req: Request, res: Response) {
+export async function forwardConcern(req: Request, res: Response, next: NextFunction) {
   try {
-    const parsed = forwardConcernRequestSchema.safeParse(req.body);
-    const { department } = (parsed.success ? parsed.data : {}) as { department?: string };
-    if (!department?.trim()) {
-      res.status(400).json({ error: 'department is required' });
-      return;
-    }
+    const { department } = req.body as { department: string };
 
     const c = await concernService.forwardConcern(req.params.id, department);
-    res.json(concernToApi(c));
+    ok(res, concernToApi(c));
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Failed to forward concern' });
+    next(e);
   }
 }
 

@@ -4,6 +4,11 @@ import { connectMongo } from './db/mongo.js';
 
 dotenv.config();
 
+if (!process.env.JWT_SECRET?.trim()) {
+  console.error('Missing JWT_SECRET. Set JWT_SECRET in environment before starting server.');
+  process.exit(1);
+}
+
 const PORT = Number(process.env.PORT) || 3001;
 const app = createApp();
 

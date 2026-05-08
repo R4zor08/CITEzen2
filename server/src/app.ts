@@ -1,6 +1,8 @@
 import cors from 'cors';
 import express from 'express';
 import { corsOriginOption } from './http/corsOriginOption.js';
+import { fail } from './http/apiResponse.js';
+import { errorMiddleware } from './http/errorMiddleware.js';
 import { registerRoutes } from './routes/index.js';
 
 export function createApp() {
@@ -10,6 +12,10 @@ export function createApp() {
   app.use(express.json({ limit: process.env.JSON_BODY_LIMIT ?? '15mb' }));
 
   registerRoutes(app);
+  app.use((_req, res) => {
+    fail(res, 404, 'not_found', 'Route not found');
+  });
+  app.use(errorMiddleware);
   return app;
 }
 

@@ -41,12 +41,13 @@ export function useAuth() {
   }, []);
 
   const login = async (identifier: string, password: string, role: Role) => {
-    const { user: u } = await apiJson<{ user: User }>('/api/auth/login', {
+    const { user: u, token } = await apiJson<{ user: User; token: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ identifier, password, role })
     });
     setUser(u);
     localStorage.setItem('citezen_user', JSON.stringify(u));
+    localStorage.setItem('citezen_token', token);
     return u;
   };
 
@@ -83,6 +84,7 @@ export function useAuth() {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('citezen_user');
+    localStorage.removeItem('citezen_token');
   };
 
   const updateUser = async (updates: Partial<User>) => {
