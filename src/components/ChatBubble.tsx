@@ -53,6 +53,59 @@ interface ChatBubbleProps {
 }
 const CITEZEN_LOGO = "/Gemini_Generated_Image_u7mgetu7mgetu7mg.png";
 
+type ChatIntent = 'citezen' | 'campus' | 'general';
+
+function detectIntent(text: string): ChatIntent {
+  const t = text.toLowerCase();
+  const citezenTerms = [
+    'citezen',
+    'concern',
+    'complaint',
+    'ticket',
+    'department',
+    'dashboard',
+    'status',
+    'submit',
+    'forward',
+    'nemsu'
+  ];
+  const campusTerms = [
+    'school',
+    'campus',
+    'class',
+    'student',
+    'teacher',
+    'professor',
+    'university'
+  ];
+
+  if (citezenTerms.some((k) => t.includes(k))) return 'citezen';
+  if (campusTerms.some((k) => t.includes(k))) return 'campus';
+  return 'general';
+}
+
+function buildSystemPrompt(args: { userName: string; userRole: string; intent: ChatIntent }) {
+  return `You are GabAI, the campus assistant for CITEzen concern management at NEMSU (North Eastern Mindanao State University). Current user: ${args.userName} (${args.userRole}).
+
+Current detected intent category: ${args.intent}
+
+Behavior policy:
+1) If the user asks about CITEzen workflows (submit, track, comments, departments, dashboards, roles), give practical and accurate step-by-step guidance first.
+2) If the user asks campus-adjacent questions, answer helpfully and briefly, then suggest a relevant CITEzen action when useful.
+3) If the user asks general non-CITEzen questions, still answer clearly and concisely. Do not refuse only because it is off-topic.
+4) Never invent private account data, university policies you do not know, or system capabilities.
+5) Refuse harmful or illegal requests briefly and safely.
+
+Formatting rules:
+- Use plain text only (no markdown emphasis).
+- Keep answers easy to scan with short paragraphs or numbered steps when needed.
+
+Language rules:
+- Reply in the same language as the user (English, Tagalog/Filipino, Bisaya/Cebuano, or mixed style).
+- If user mixes languages (Taglish/Bislish), mirror naturally.
+`;
+}
+
 const formatFileSize = (bytes: number) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -420,6 +473,23 @@ export function ChatBubble({
           content
         };
       });
+      const lastUserMessage =
+        [...conversation].reverse().find((m) => m.role === 'user')?.content ?? '';
+      const intent = detectIntent(lastUserMessage);
+      const systemPrompt = buildSystemPrompt({
+        userName: user.name,
+        userRole: user.role,
+        intent
+      });
+      const contextHint = `Context hint:
+- Intent category: ${intent}
+- Keep response useful even if not CITEzen-specific.
+- If relevant, end with a short CITEzen-related next step.`;
+      const payloadMessages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'system', content: contextHint },
+        ...contextMessages
+      ];
 
       try {
         const url = `${getApiBase()}/api/chat/stream`;
@@ -433,40 +503,7 @@ export function ChatBubble({
             signal: controller.signal,
             body: JSON.stringify({
               model: 'llama-3.3-70b-versatile',
-              messages: [
-                {
-                  role: 'system',
-                  content: `You are GabAI, the professional campus assistant for the CITEzen concern management system at NEMSU (North Eastern Mindanao State University). Your name "GabAI" comes from "Gabay" (guide in Filipino/Bisaya) + AI. Current user: ${user.name} (${user.role}).
-
-## How you think (do this silently before answering)
-1. Decide if the question is about CITEzen / campus concerns / NEMSU workflows that touch this app, loosely related (general student life, university norms), or unrelated (random trivia, homework in other subjects, coding, entertainment, etc.).
-2. Answer accordingly: be clear, respectful, and explicit about what you can and cannot do.
-
-## When the question IS about CITEzen (concerns, departments, submitting or tracking issues, dashboards, roles, how the app works)
-- Give clear, practical guidance. Use short numbered steps (1. 2.) or lines starting with "- " when lists help.
-- If something depends on their account or live data you cannot see, say so and tell them exactly where in the app to look (e.g. student/staff/admin dashboard) instead of guessing.
-
-## When it is only loosely related (general campus life, study tips, etiquette—not specific app screens)
-- You may answer briefly and helpfully, then you may gently offer that you specialize in CITEzen concerns if they need that next.
-
-## When it is NOT about CITEzen or the campus concern process
-- Still be helpful and polite: you may give a short accurate answer if it is general knowledge and safe.
-- In the same reply, clearly say that it is outside your main role as the CITEzen assistant, so expectations stay honest.
-- Invite them to ask anything about concerns, departments, or using CITEzen next. Do not pretend to have access to their grades, accounts, or external systems.
-
-## User-visible formatting (mandatory)
-- Write in plain text only. Never use asterisks (*), double asterisks, or markdown for emphasis, bullets, or italics.
-- Do not surround words with special characters for styling. Use normal sentences, optional numbered lists, or hyphen-led lines (- like this).
-
-## Always
-- Never invent features, policies, or data about the user or the university.
-- Refuse harmful or illegal requests briefly and redirect to appropriate help.
-- If the user attaches a file or image, acknowledge it from the bracket description in the user message.
-
-IMPORTANT LANGUAGE INSTRUCTIONS: You are multilingual (English, Tagalog/Filipino, Bisaya/Cebuano). Always reply in the same language the user uses; if they mix languages (Taglish, Bislish), match naturally.`
-                },
-                ...contextMessages
-              ],
+              messages: payloadMessages,
               temperature: 0.5,
               max_tokens: 768,
               stream: true
@@ -478,6 +515,19 @@ IMPORTANT LANGUAGE INSTRUCTIONS: You are multilingual (English, Tagalog/Filipino
           const msg = await response.text().catch(() => '');
           throw new Error(msg || `Chat request failed (${response.status})`);
         }
+
+        const contentType = response.headers.get('content-type') ?? '';
+
+        const loweredContentType = contentType.toLowerCase();
+
+        if (loweredContentType && !loweredContentType.includes('text/event-stream')) {
+          const msg = await response.text().catch(() => '');
+          throw new Error(
+            msg ||
+              `Unexpected response type from server (${contentType || 'unknown'})`
+          );
+        }
+
         setIsLoading(false);
         setIsStreaming(true);
         startStreamReveal();
@@ -485,34 +535,83 @@ IMPORTANT LANGUAGE INSTRUCTIONS: You are multilingual (English, Tagalog/Filipino
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
         if (!reader) throw new Error('No response body');
-        let streamDone = false;
-        while (!streamDone) {
+        let pending = '';
+        for (;;) {
           const { done, value } = await reader.read();
-          if (done) {
-            streamDone = true;
-            break;
-          }
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter((line) => line.trim() !== '');
-          for (const line of lines) {
+          if (done) break;
+          if (!value) continue;
+
+          pending += decoder.decode(value, { stream: true });
+          const lines = pending.split(/\r?\n/);
+          pending = lines.pop() ?? '';
+
+          for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line) continue;
             if (line === 'data: [DONE]') continue;
             if (!line.startsWith('data: ')) continue;
             try {
               const json = JSON.parse(line.slice(6));
               const delta = json.choices?.[0]?.delta?.content;
-              if (delta) {
-                streamBufferRef.current += delta;
-              }
+              if (delta) streamBufferRef.current += delta;
             } catch {
-              // Skip malformed chunks
+              // Ignore malformed JSON; SSE lines can be split across chunks.
+            }
+          }
+        }
+
+        if (pending.trim()) {
+          const line = pending.trim();
+          if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+            try {
+              const json = JSON.parse(line.slice(6));
+              const delta = json.choices?.[0]?.delta?.content;
+              if (delta) streamBufferRef.current += delta;
+            } catch {
+              // ignore
             }
           }
         }
 
         flushStreamDisplay();
-        const fullContent = formatAssistantReply(streamBufferRef.current);
+        let fullContent = formatAssistantReply(streamBufferRef.current);
         streamBufferRef.current = '';
         clearStreamReveal();
+
+        if (!fullContent.trim()) {
+          const fallback = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            signal: controller.signal,
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile',
+              messages: payloadMessages,
+              temperature: 0.5,
+              max_tokens: 768,
+              stream: false
+            })
+          });
+
+          if (!fallback.ok) {
+            const fallbackText = await fallback.text().catch(() => '');
+            throw new Error(
+              fallbackText ||
+                `Stream returned no tokens and fallback failed (${fallback.status}).`
+            );
+          }
+
+          const fallbackData = (await fallback.json().catch(() => ({} as any))) as {
+            content?: string;
+          };
+          fullContent = formatAssistantReply(String(fallbackData.content ?? ''));
+          if (!fullContent.trim()) {
+            throw new Error(
+              'Stream returned no tokens and fallback response was empty.'
+            );
+          }
+        }
 
         setSessions((prev) =>
           prev.map((s) =>
@@ -523,7 +622,7 @@ IMPORTANT LANGUAGE INSTRUCTIONS: You are multilingual (English, Tagalog/Filipino
                     ...s.messages,
                     {
                       role: 'assistant',
-                      content: fullContent
+                      content: fullContent.trim()
                     }
                   ],
                   updatedAt: new Date().toISOString()
@@ -573,6 +672,14 @@ IMPORTANT LANGUAGE INSTRUCTIONS: You are multilingual (English, Tagalog/Filipino
         setStreamingContent('');
         streamBufferRef.current = '';
         clearStreamReveal();
+        const rawMessage = String(
+          anyErr?.message ||
+            'Sorry, I encountered an error connecting to the server. Please try again later.'
+        );
+        const safeMessage =
+          rawMessage.includes('<!DOCTYPE') || rawMessage.length > 400
+            ? 'I had trouble completing your request. Please try again, or ask a shorter version of your question.'
+            : rawMessage;
         setSessions((prev) =>
           prev.map((s) =>
             s.id === chatId
@@ -582,8 +689,7 @@ IMPORTANT LANGUAGE INSTRUCTIONS: You are multilingual (English, Tagalog/Filipino
                     ...s.messages,
                     {
                       role: 'assistant',
-                      content:
-                        'Sorry, I encountered an error connecting to the server. Please try again later.'
+                      content: safeMessage
                     }
                   ],
                   updatedAt: new Date().toISOString()
