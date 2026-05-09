@@ -22,8 +22,9 @@ export const createConcernRequestSchema = z.object({
   category: z.string().optional(),
   subcategory: z.string().optional(),
   priority: prioritySchema.optional(),
-  studentId: z.string().min(1),
-  studentName: z.string().min(1),
+  // Ownership fields are bound from authenticated user server-side.
+  studentId: z.string().min(1).optional(),
+  studentName: z.string().min(1).optional(),
   department: z.string().optional(),
   formData: z.record(z.string(), z.unknown()).optional(),
   attachments: z.array(z.string()).optional()

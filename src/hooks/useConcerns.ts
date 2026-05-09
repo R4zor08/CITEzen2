@@ -105,7 +105,6 @@ export function useConcerns(currentUser: User | null) {
           category: concernData.category,
           subcategory: concernData.subcategory,
           priority: concernData.priority,
-          studentId: currentUser.id,
           studentName: currentUser.name,
           department: concernData.department,
           formData: concernData.formData,

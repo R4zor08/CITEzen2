@@ -53,12 +53,12 @@ export async function createConcern(req: Request, res: Response, next: NextFunct
       attachments?: string[];
     };
 
-    // Bind ownership to authenticated user.
-    if (req.user.studentId && b.studentId !== req.user.studentId) {
-      throw new ForbiddenError('studentId does not match authenticated user');
-    }
-
-    const r = await concernService.createConcern(b);
+    const r = await concernService.createConcern({
+      ...b,
+      // Always trust server-side auth context for ownership.
+      studentId: req.user.id,
+      studentName: req.user.name || b.studentName
+    });
     if ('error' in r) {
       throw new BadRequestError(String(r.error ?? 'Invalid concern request'));
     }
