@@ -27,6 +27,16 @@ async function main() {
   );
 
   console.log('Seeded admin user (Mongo): admin@nemsu.edu.ph');
+
+  // Legacy registrations stored studentId: null for staff/admin; MongoDB unique sparse indexes still
+  // index null and block additional staff. Remove the field so only students carry studentId.
+  const unset = await UserModel.updateMany(
+    { role: { $in: ['staff', 'admin'] }, studentId: null },
+    { $unset: { studentId: '' } }
+  );
+  if (unset.modifiedCount > 0) {
+    console.log(`Unset null studentId on ${unset.modifiedCount} staff/admin user(s)`);
+  }
 }
 
 main()

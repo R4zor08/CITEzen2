@@ -6,7 +6,9 @@ import type { Role } from '../types.js';
 import * as users from '../repositories/userRepository.js';
 
 export async function login(args: { identifier: string; password: string; role: Role }) {
-  const user = await users.findUserForLogin({ identifier: args.identifier, role: args.role });
+  const identifier =
+    args.role === 'student' ? args.identifier.trim() : args.identifier.trim().toLowerCase();
+  const user = await users.findUserForLogin({ identifier, role: args.role });
   if (!user) {
     throw new UnauthorizedError('Invalid credentials. Please check your Student ID/Email and password.');
   }
@@ -45,6 +47,7 @@ export async function register(args: {
     email = email || `${args.studentId.toLowerCase().replace(/\s+/g, '')}@student.local`;
   } else {
     if (!email) throw new ConflictError('Email is required.');
+    email = email.toLowerCase();
     const dup = await users.findUserByEmail(email);
     if (dup) throw new ConflictError('An account with this email already exists.');
   }
@@ -52,17 +55,20 @@ export async function register(args: {
   const passwordHash = await bcrypt.hash(args.password, 10);
 
   const isStudent = args.role === 'student';
-  const studentId = isStudent ? args.studentId ?? null : null;
 
-  const created = await users.createUser({
+  // Multiple staff/admin docs must NOT store studentId: null — MongoDB unique+sparse still indexes null,
+  // causing duplicate key errors on the second registration. Omit the field entirely for non-students.
+  const baseUser = {
     name: args.name,
     email: email!,
     passwordHash,
     role: args.role,
-    studentId,
     course: args.course ?? null,
     department: args.department ?? null
-  });
+  };
+  const created = await users.createUser(
+    isStudent ? { ...baseUser, studentId: args.studentId! } : baseUser
+  );
   return { userId: created.id };
 }
 
