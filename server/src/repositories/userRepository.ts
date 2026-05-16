@@ -26,6 +26,14 @@ export async function listUsers() {
   return UserModel.find().sort({ createdAt: 1 });
 }
 
+export async function findUsersByRole(role: Role) {
+  return UserModel.find({ role }).exec();
+}
+
+export async function findStaffByDepartment(department: string) {
+  return UserModel.find({ role: 'staff', department }).exec();
+}
+
 export async function createUser(data: any) {
   return UserModel.create(data);
 }

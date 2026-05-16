@@ -5,6 +5,14 @@ const prioritySchema = z.enum(['low', 'medium', 'high', 'urgent']) satisfies z.Z
 const roleSchema = z.enum(['student', 'staff', 'admin']) satisfies z.ZodType<Role>;
 const concernStatusSchema = z.enum(['pending', 'in-progress', 'resolved', 'rejected']);
 
+export const concernAttachmentSchema = z.object({
+  name: z.string().min(1),
+  mimeType: z.string().min(1),
+  size: z.number().positive().max(10 * 1024 * 1024),
+  dataUrl: z.string().min(1),
+  field: z.string().optional()
+});
+
 export const concernIdParamSchema = z.object({
   id: z.string().min(1)
 });
@@ -27,7 +35,7 @@ export const createConcernRequestSchema = z.object({
   studentName: z.string().min(1).optional(),
   department: z.string().optional(),
   formData: z.record(z.string(), z.unknown()).optional(),
-  attachments: z.array(z.string()).optional()
+  attachments: z.array(concernAttachmentSchema).max(15).optional()
 });
 export type CreateConcernRequest = z.infer<typeof createConcernRequestSchema>;
 

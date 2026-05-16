@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { ok } from '../http/apiResponse.js';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../http/httpError.js';
 import { commentToApi, concernToApi } from '../mappers.js';
-import type { Role } from '../types.js';
+import type { ConcernAttachment, Role } from '../types.js';
 import * as concernService from '../services/concernService.js';
 
 export async function listConcerns(req: Request, res: Response, next: NextFunction) {
@@ -50,7 +50,7 @@ export async function createConcern(req: Request, res: Response, next: NextFunct
       studentName: string;
       department?: string;
       formData?: Record<string, unknown>;
-      attachments?: string[];
+      attachments?: ConcernAttachment[];
     };
 
     const r = await concernService.createConcern({

@@ -1,4 +1,4 @@
-import type { Priority, Role } from '../types.js';
+import type { ConcernAttachment, Priority, Role } from '../types.js';
 import { statusFromApi } from '../mappers.js';
 import * as concerns from '../repositories/concernRepository.js';
 import * as users from '../repositories/userRepository.js';
@@ -33,7 +33,7 @@ export async function createConcern(args: {
   studentName: string;
   department?: string;
   formData?: Record<string, unknown>;
-  attachments?: string[];
+  attachments?: ConcernAttachment[];
 }) {
   const student = await users.findUserById(args.studentId);
   if (!student) return { error: 'Student user not found' as const };
@@ -58,6 +58,32 @@ export async function createConcern(args: {
     type: 'system',
     concernId: c.id
   });
+
+  const attachmentCount = args.attachments?.length ?? 0;
+  const attachmentNote =
+    attachmentCount > 0
+      ? ` (${attachmentCount} attachment${attachmentCount > 1 ? 's' : ''})`
+      : '';
+
+  const [admins, staff] = await Promise.all([
+    users.findUsersByRole('admin'),
+    users.findStaffByDepartment(c.department)
+  ]);
+
+  const notifyIds = new Set<string>();
+  for (const u of [...admins, ...staff]) {
+    const anyU = u as { id?: string; _id?: { toString(): string } };
+    const userId = anyU.id ?? anyU._id?.toString();
+    if (!userId || notifyIds.has(userId)) continue;
+    notifyIds.add(userId);
+    await notifications.createNotification({
+      userId,
+      title: 'New Concern Submitted',
+      message: `${args.studentName} submitted "${c.title}" routed to ${c.department}${attachmentNote}.`,
+      type: 'system',
+      concernId: c.id
+    });
+  }
 
   return { concern: c } as const;
 }

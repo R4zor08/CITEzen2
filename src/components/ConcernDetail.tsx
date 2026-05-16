@@ -2,7 +2,8 @@ import React, { useState, Fragment, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { Concern, User, ConcernStatus } from '../types';
+import { Concern, ConcernAttachment, User, ConcernStatus } from '../types';
+import { formatFileSize, inferMimeFromDataUrl } from '../lib/files';
 import { StatusBadge, PriorityBadge } from './StatusBadge';
 import { departmentsList } from '../data/mockData';
 import {
@@ -12,13 +13,30 @@ import {
   UserIcon,
   MessageSquareIcon,
   SendIcon,
-  PaperclipIcon,
+  FileTextIcon,
+  ImageIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
   XCircleIcon,
   AlertCircleIcon,
   ArrowLeftIcon } from
 'lucide-react';
+function resolveConcernAttachments(concern: Concern): ConcernAttachment[] {
+  if (concern.attachments && concern.attachments.length > 0) {
+    return concern.attachments;
+  }
+  if (!concern.formData) return [];
+  return Object.entries(concern.formData)
+    .filter(([, value]) => typeof value === 'string' && value.startsWith('data:'))
+    .map(([key, value]) => ({
+      name: key.replace(/([A-Z])/g, ' $1').trim(),
+      mimeType: inferMimeFromDataUrl(value as string),
+      size: 0,
+      dataUrl: value as string,
+      field: key
+    }));
+}
+
 interface ConcernDetailProps {
   isOpen: boolean;
   concern: Concern | undefined;
@@ -328,7 +346,12 @@ export function ConcernDetail({
                   Additional Details
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                  {Object.entries(concern.formData).map(([key, value]) =>
+                  {Object.entries(concern.formData)
+                    .filter(
+                      ([, value]) =>
+                        typeof value !== 'string' || !value.startsWith('data:')
+                    )
+                    .map(([key, value]) =>
                 <div
                   key={key}
                   className="bg-white/5 p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-white/10">
@@ -346,20 +369,35 @@ export function ConcernDetail({
             }
 
             {/* Attachments */}
-            {concern.attachments && concern.attachments.length > 0 &&
+            {resolveConcernAttachments(concern).length > 0 &&
             <div>
                 <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-3">
                   Attachments
                 </h3>
                 <div className="flex flex-wrap gap-3">
-                  {concern.attachments.map((_att, i) =>
-                <div
-                  key={i}
-                  className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-300 hover:bg-white/10 cursor-pointer transition-colors">
+                  {resolveConcernAttachments(concern).map((att, i) =>
+                <a
+                  key={`${att.name}-${i}`}
+                  href={att.dataUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={att.name}
+                  className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-300 hover:bg-white/10 hover:border-purple-500/30 transition-colors">
                   
-                      <PaperclipIcon className="h-4 w-4 text-purple-400" />
-                      Attachment_{i + 1}.pdf
-                    </div>
+                      {att.mimeType.startsWith('image/') ? (
+                        <ImageIcon className="h-4 w-4 text-cyan-400 shrink-0" />
+                      ) : (
+                        <FileTextIcon className="h-4 w-4 text-purple-400 shrink-0" />
+                      )}
+                      <span className="flex flex-col min-w-0">
+                        <span className="truncate max-w-[12rem]">{att.name}</span>
+                        {att.size > 0 && (
+                          <span className="text-xs text-gray-500">
+                            {formatFileSize(att.size)}
+                          </span>
+                        )}
+                      </span>
+                    </a>
                 )}
                 </div>
               </div>

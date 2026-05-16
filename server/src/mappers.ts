@@ -1,4 +1,4 @@
-import type { Role } from './types.js';
+import type { ConcernAttachment, Role } from './types.js';
 
 function parseJson<T>(raw: string | null, fallback: T): T {
   if (raw == null || raw === '') return fallback;
@@ -41,6 +41,56 @@ type CommentLike = {
   createdAt: Date;
   visibleTo: string | null;
 };
+
+function inferMimeFromDataUrl(dataUrl: string): string {
+  const match = /^data:([^;]+);/.exec(dataUrl);
+  return match?.[1] ?? 'application/octet-stream';
+}
+
+function normalizeAttachment(item: unknown): ConcernAttachment | null {
+  if (item == null) return null;
+
+  if (typeof item === 'object') {
+    const o = item as Record<string, unknown>;
+    if (typeof o.dataUrl === 'string') {
+      return {
+        name: typeof o.name === 'string' ? o.name : 'Attachment',
+        mimeType:
+          typeof o.mimeType === 'string' ? o.mimeType : inferMimeFromDataUrl(o.dataUrl),
+        size: typeof o.size === 'number' ? o.size : 0,
+        dataUrl: o.dataUrl,
+        field: typeof o.field === 'string' ? o.field : undefined
+      };
+    }
+  }
+
+  if (typeof item === 'string') {
+    if (item.startsWith('data:')) {
+      return {
+        name: 'Attachment',
+        mimeType: inferMimeFromDataUrl(item),
+        size: 0,
+        dataUrl: item
+      };
+    }
+    try {
+      return normalizeAttachment(JSON.parse(item));
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function parseAttachments(raw: string | null): ConcernAttachment[] | undefined {
+  const parsed = parseJson<unknown[]>(raw, []);
+  if (!Array.isArray(parsed) || parsed.length === 0) return undefined;
+  const normalized = parsed
+    .map(normalizeAttachment)
+    .filter((a): a is ConcernAttachment => a != null);
+  return normalized.length > 0 ? normalized : undefined;
+}
 
 export function commentToApi(c: CommentLike) {
   const anyC = c as any;
@@ -91,7 +141,7 @@ export function concernToApi(c: ConcernLike) {
     department: c.department,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
-    attachments: parseJson<string[] | undefined>(c.attachments ?? null, undefined),
+    attachments: parseAttachments(c.attachments ?? null),
     formData: parseJson<Record<string, unknown> | undefined>(c.formData ?? null, undefined),
     comments: c.comments.map(commentToApi)
   };

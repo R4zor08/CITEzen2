@@ -30,6 +30,14 @@ export interface Comment {
   createdAt: string;
 }
 
+export interface ConcernAttachment {
+  name: string;
+  mimeType: string;
+  size: number;
+  dataUrl: string;
+  field?: string;
+}
+
 export interface Concern {
   id: string;
   title: string;
@@ -44,7 +52,7 @@ export interface Concern {
   department: string;
   createdAt: string;
   updatedAt: string;
-  attachments?: string[];
+  attachments?: ConcernAttachment[];
   comments: Comment[];
   formData?: Record<string, any>;
 }

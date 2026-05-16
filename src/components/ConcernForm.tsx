@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { User, Template, Concern } from '../types';
+import { User, Template, Concern, ConcernAttachment } from '../types';
 import { categories, templates } from '../data/templates';
+import { FileUploadZone } from './FileUploadZone';
 import {
   BookOpenIcon,
   FileTextIcon,
@@ -8,12 +9,11 @@ import {
   MessageSquareWarningIcon,
   ArrowLeftIcon,
   CheckCircle2Icon,
-  UploadCloudIcon,
   AlertCircleIcon } from
 'lucide-react';
 interface ConcernFormProps {
   user: User;
-  onSubmit: (concern: Partial<Concern>) => void;
+  onSubmit: (concern: Partial<Concern>) => void | Promise<void>;
   onCancel: () => void;
 }
 const iconMap: Record<string, React.ElementType> = {
@@ -32,6 +32,7 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
   const [priority, setPriority] = useState<
     'low' | 'medium' | 'high' | 'urgent'>(
     'medium');
+  const [filesByField, setFilesByField] = useState<Record<string, ConcernAttachment[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -44,6 +45,7 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
       title: template.title,
       description: ''
     });
+    setFilesByField({});
     setStep(3);
   };
   const handleInputChange = (
@@ -57,25 +59,32 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
       [name]: value
     }));
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTemplate) return;
     setIsSubmitting(true);
-    // Extract title and description, keep the rest in formData
     const { title, description, ...restFormData } = formData;
-    // Simulate API delay
-    setTimeout(() => {
-      onSubmit({
+    const fileFieldNames = new Set(
+      selectedTemplate.fields.filter((f) => f.type === 'file').map((f) => f.name)
+    );
+    const cleanedFormData = Object.fromEntries(
+      Object.entries(restFormData).filter(([key]) => !fileFieldNames.has(key))
+    );
+    const allAttachments = Object.values(filesByField).flat();
+    try {
+      await onSubmit({
         title: title || selectedTemplate.title,
         description: description || 'No description provided.',
         category: selectedTemplate.category,
         subcategory: selectedTemplate.subcategory,
         priority,
         department: selectedTemplate.routeTo,
-        formData: restFormData
+        formData: cleanedFormData,
+        attachments: allAttachments.length > 0 ? allAttachments : undefined
       });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
   const availableTemplates = templates.filter(
     (t) => t.category === selectedCategory
@@ -314,21 +323,14 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
                 )}
                     </select> :
               field.type === 'file' ?
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-white/10 border-dashed rounded-xl hover:border-purple-500/50 transition-colors bg-dark-800 cursor-pointer group">
-                      <div className="space-y-1 text-center">
-                        <UploadCloudIcon className="mx-auto h-10 w-10 text-gray-400 group-hover:text-purple-400 transition-colors" />
-                        <div className="flex text-sm text-gray-400 justify-center">
-                          <span className="relative cursor-pointer rounded-md font-medium text-purple-400 hover:text-purple-300 focus-within:outline-none">
-                            <span>Upload a file</span>
-                            <input type="file" className="sr-only" disabled />
-                          </span>
-                          <p className="pl-1">or drag and drop</p>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          PNG, JPG, PDF up to 10MB
-                        </p>
-                      </div>
-                    </div> :
+              <FileUploadZone
+                fieldName={field.name}
+                files={filesByField[field.name] ?? []}
+                onChange={(files) =>
+                  setFilesByField((prev) => ({ ...prev, [field.name]: files }))
+                }
+                disabled={isSubmitting}
+              /> :
               null}
                 </div>
             )}
