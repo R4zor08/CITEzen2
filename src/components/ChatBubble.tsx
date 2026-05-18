@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 import { toast } from 'sonner';
 import { getApiBase } from '../lib/api';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { ChatHistorySidebar } from './ChatHistorySidebar';
 import {
-  MessageCircleIcon,
   XIcon,
   SendIcon,
   UserIcon,
@@ -15,12 +16,9 @@ import {
   DownloadIcon,
   UploadCloudIcon,
   FileSpreadsheetIcon,
-  ChevronLeftIcon,
-  ChevronDownIcon,
+  MenuIcon,
   PlusIcon,
   PencilIcon,
-  MoreHorizontalIcon,
-  SearchIcon,
   AlertTriangleIcon,
   Copy as CopyIcon,
   RefreshCw as RefreshCwIcon } from
@@ -162,7 +160,8 @@ export function ChatBubble({
     },
     [isStandaloneWindow, onOpenChange, openControlled]
   );
-  const [view, setView] = useState<'chat' | 'history'>('chat');
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   const createInitialGreeting = (): Message => ({
     role: 'assistant',
     content: `Hi ${user.name.split(' ')[0]}! I'm GabAI—your guide for CITEzen (concerns, departments, and how the app works). Ask me anything about the system, or other questions too; I'll help when I can and be clear when something isn't my specialty. What would you like to know?`
@@ -273,17 +272,20 @@ export function ChatBubble({
     });
   };
   useEffect(() => {
-    if (isOpen && view === 'chat') {
+    if (isOpen) {
       scrollToBottom();
     }
   }, [
   activeSession?.messages,
   isOpen,
-  view,
   stagedAttachment,
   isProcessingFile,
   streamingContent]
   );
+
+  useEffect(() => {
+    if (isDesktop) setIsHistoryOpen(false);
+  }, [isDesktop]);
 
   useEffect(() => {
     if (isStandaloneWindow) return;
@@ -296,7 +298,7 @@ export function ChatBubble({
   }, [isOpen, isStandaloneWindow]);
 
   useEffect(() => {
-    if (!isOpen || view !== 'history') return;
+    if (!isOpen || (!isDesktop && !isHistoryOpen)) return;
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (
@@ -313,17 +315,23 @@ export function ChatBubble({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, view]);
+  }, [isOpen, isDesktop, isHistoryOpen]);
   // --- Chat Management Actions ---
   const handleNewChat = () => {
     const newSession = createNewSession();
     setSessions((prev) => [newSession, ...prev]);
     setActiveChatId(newSession.id);
-    setView('chat');
+    if (!isDesktop) setIsHistoryOpen(false);
     setStagedAttachment(null);
     setInput('');
     setInlineEditIndex(null);
     setInlineEditDraft('');
+  };
+
+  const handleSelectSession = (id: string) => {
+    setActiveChatId(id);
+    setOpenMenuSessionId(null);
+    if (!isDesktop) setIsHistoryOpen(false);
   };
 
   const stopStreaming = () => {
@@ -891,6 +899,35 @@ export function ChatBubble({
     );
   }, [sessions, searchQuery]);
   const groupOrder = ['Today', 'Yesterday', 'Previous 7 Days', 'Older'];
+
+  const historySidebarProps = {
+    sessions,
+    groupedSessions,
+    groupOrder,
+    activeChatId,
+    searchQuery,
+    collapsedGroups,
+    editingChatId,
+    editTitle,
+    openMenuSessionId,
+    searchInputRef: historySearchRef,
+    onSearchChange: setSearchQuery,
+    onNewChat: handleNewChat,
+    onSelectSession: handleSelectSession,
+    onToggleGroup: (group: string) =>
+      setCollapsedGroups((prev) => ({ ...prev, [group]: !prev[group] })),
+    onEditTitleChange: setEditTitle,
+    onSaveRename: saveRename,
+    onCancelRename: () => setEditingChatId(null),
+    onStartRename: (id: string, title: string) => {
+      setEditTitle(title);
+      setEditingChatId(id);
+    },
+    onDeleteRequest: (id: string) =>
+      setConfirmAction({ type: 'delete', chatId: id }),
+    onOpenMenu: setOpenMenuSessionId
+  };
+
   return (
     <>
       {/* Lightbox Overlay */}
@@ -1027,257 +1064,50 @@ export function ChatBubble({
             }
             </AnimatePresence>
 
-            <div className="flex-1 relative overflow-hidden flex flex-col">
-              <AnimatePresence mode="wait" initial={false}>
-                {view === 'history' ?
-              <motion.div
-                key="history"
-                initial={{
-                  x: -20,
-                  opacity: 0
-                }}
-                animate={{
-                  x: 0,
-                  opacity: 1
-                }}
-                exit={{
-                  x: -20,
-                  opacity: 0
-                }}
-                transition={{
-                  duration: 0.2
-                }}
-                className="absolute inset-0 flex flex-col bg-dark-900">
-                
-                    <div className="flex flex-col flex-1 min-h-0 w-full max-w-[320px] mx-auto">
-                    {/* History Header */}
-                    <div className="flex items-center justify-between px-3 py-3 border-b border-white/10 bg-dark-900 shrink-0">
-                      <h3 className="text-sm font-semibold text-white">
-                        Chats
-                      </h3>
-                      <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label="Close">
-                    
-                        <XIcon className="h-5 w-5" />
-                      </button>
-                    </div>
+            <div className="flex flex-1 min-h-0 overflow-hidden">
+              <aside className="hidden md:flex flex-col w-[260px] shrink-0 border-r border-white/10 bg-dark-900 min-h-0">
+                <ChatHistorySidebar {...historySidebarProps} />
+              </aside>
 
-                    {/* History Search & New Chat */}
-                    <div className="px-3 py-3 border-b border-white/10 bg-dark-900 shrink-0 space-y-2">
-                      <button
-                    type="button"
-                    onClick={handleNewChat}
-                    className="w-full min-h-[44px] py-2.5 rounded-lg border border-white/10 bg-transparent text-gray-200 hover:bg-white/5 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
-                    
-                        <PlusIcon className="h-4 w-4 shrink-0" /> New chat
-                      </button>
-                      <div className="relative">
-                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                        <input
-                      ref={historySearchRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search chats…"
-                      className="w-full bg-dark-800 border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/20 focus:ring-0" />
-                    
-                      </div>
-                    </div>
+              <AnimatePresence>
+                {isHistoryOpen && !isDesktop && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+                      onClick={() => setIsHistoryOpen(false)}
+                    />
+                    <motion.aside
+                      initial={{ x: '-100%' }}
+                      animate={{ x: 0 }}
+                      exit={{ x: '-100%' }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="fixed inset-y-0 left-0 z-50 w-[min(100vw,320px)] flex flex-col bg-dark-900 border-r border-white/10 md:hidden pt-[env(safe-area-inset-top,0px)]"
+                    >
+                      <ChatHistorySidebar
+                        {...historySidebarProps}
+                        showCloseButton
+                        onClose={() => setIsHistoryOpen(false)}
+                      />
+                    </motion.aside>
+                  </>
+                )}
+              </AnimatePresence>
 
-                    {/* History List */}
-                    <div className="flex-1 overflow-y-auto px-2 py-2 space-y-4 custom-scrollbar">
-                      {Object.keys(groupedSessions).length === 0 ?
-                  <div className="h-full flex flex-col items-center justify-center text-center p-6">
-                          <MessageCircleIcon className="h-10 w-10 text-gray-600 mb-3" />
-                          <p className="text-sm text-gray-500">
-                            {sessions.length === 0
-                              ? 'No chats yet'
-                              : 'No conversations found'}
-                          </p>
-                        </div> :
+              <main className="flex flex-1 flex-col min-w-0 min-h-0 bg-dark-900/50">
 
-                  groupOrder.map((group) => {
-                    const groupSessions = groupedSessions[group];
-                    if (!groupSessions || groupSessions.length === 0)
-                    return null;
-                    return (
-                      <div key={group} className="space-y-1">
-                              <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCollapsedGroups((prev) => ({
-                              ...prev,
-                              [group]: !prev[group]
-                            }));
-                          }}
-                          className="flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-white/5 transition-colors group/header">
-                          
-                                <h4 className="text-xs font-medium text-gray-500">
-                                  {group}
-                                </h4>
-                                <motion.div
-                            animate={{
-                              rotate: collapsedGroups[group] ? -90 : 0
-                            }}
-                            transition={{
-                              duration: 0.2
-                            }}>
-                            
-                                  <ChevronDownIcon className="h-3.5 w-3.5 text-gray-500 group-hover/header:text-gray-300 transition-colors" />
-                                </motion.div>
-                              </button>
-                              <AnimatePresence initial={false}>
-                                {!collapsedGroups[group] &&
-                          groupSessions.map((session) => {
-                            const isActive = session.id === activeChatId;
-                            const isMenuOpen = openMenuSessionId === session.id;
-                            return (
-                              <div
-                                key={session.id}
-                                onClick={() => {
-                                  if (editingChatId === session.id) return;
-                                  setActiveChatId(session.id);
-                                  setView('chat');
-                                  setOpenMenuSessionId(null);
-                                }}
-                                className={`group relative flex items-center min-h-[44px] px-3 py-2 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}`}>
-                                
-                                        {editingChatId === session.id ?
-                                  <input
-                                    autoFocus
-                                    value={editTitle}
-                                    onChange={(e) =>
-                                    setEditTitle(e.target.value)
-                                    }
-                                    onBlur={() =>
-                                    saveRename(session.id)
-                                    }
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter')
-                                      saveRename(session.id);
-                                      if (e.key === 'Escape')
-                                      setEditingChatId(null);
-                                    }}
-                                    className="flex-1 min-w-0 bg-dark-800 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-white/30"
-                                    onClick={(e) =>
-                                    e.stopPropagation()
-                                    } /> :
-
-
-                                  <span
-                                    className={`flex-1 min-w-0 text-sm font-medium truncate pr-8 ${isActive ? 'text-white' : 'text-gray-200'}`}>
-                                    
-                                              {session.title}
-                                            </span>
-                                  }
-
-                                        {/* Row menu */}
-                                        <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setOpenMenuSessionId(
-                                        isMenuOpen ? null : session.id
-                                      );
-                                    }}
-                                    className={`absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-md text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0 ${isMenuOpen ? 'opacity-100 bg-white/10' : 'opacity-0 group-hover:opacity-100 max-md:opacity-100'}`}
-                                    aria-label="Chat options">
-                                    
-                                            <MoreHorizontalIcon className="h-4 w-4" />
-                                          </button>
-
-                                        <AnimatePresence>
-                                          {isMenuOpen &&
-                                    <>
-                                              <div
-                                        className="fixed inset-0 z-40"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setOpenMenuSessionId(null);
-                                        }} />
-                                      
-                                              <motion.div
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        transition={{ duration: 0.12 }}
-                                        className="absolute right-0 top-full mt-1 z-50 w-36 bg-dark-800 border border-white/10 rounded-lg shadow-xl overflow-hidden py-1"
-                                        onClick={(e) => e.stopPropagation()}>
-                                        
-                                                <button
-                                          type="button"
-                                          onClick={() => {
-                                            setEditTitle(session.title);
-                                            setEditingChatId(session.id);
-                                            setOpenMenuSessionId(null);
-                                          }}
-                                          className="w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10 flex items-center gap-2">
-                                          
-                                                  <PencilIcon className="h-3.5 w-3.5 text-gray-400" />
-                                                  Rename
-                                                </button>
-                                                <button
-                                          type="button"
-                                          onClick={() => {
-                                            setConfirmAction({
-                                              type: 'delete',
-                                              chatId: session.id
-                                            });
-                                            setOpenMenuSessionId(null);
-                                          }}
-                                          className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2">
-                                          
-                                                  <Trash2Icon className="h-3.5 w-3.5" />
-                                                  Delete
-                                                </button>
-                                              </motion.div>
-                                            </>
-                                    }
-                                        </AnimatePresence>
-                                      </div>);
-
-                          })}
-                              </AnimatePresence>
-                            </div>);
-
-                  })
-                  }
-                    </div>
-                    </div>
-                  </motion.div> :
-
-              <motion.div
-                key="chat"
-                initial={{
-                  x: 20,
-                  opacity: 0
-                }}
-                animate={{
-                  x: 0,
-                  opacity: 1
-                }}
-                exit={{
-                  x: 20,
-                  opacity: 0
-                }}
-                transition={{
-                  duration: 0.2
-                }}
-                className="absolute inset-0 flex flex-col bg-dark-900/50">
                 
                     {/* Chat Header */}
                     <div className="flex items-center justify-between p-3 border-b border-white/10 bg-dark-800/80 backdrop-blur-md shrink-0">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <button
-                      onClick={() => setView('history')}
-                      className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0"
-                      title="View History">
-                      
-                          <ChevronLeftIcon className="h-5 w-5" />
+                      type="button"
+                      onClick={() => setIsHistoryOpen(true)}
+                      className="md:hidden p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label="Open chats">
+                      <MenuIcon className="h-5 w-5" />
                         </button>
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="relative shrink-0">
@@ -1945,9 +1775,7 @@ export function ChatBubble({
                         </div>
                       }
                     </div>
-                  </motion.div>
-              }
-              </AnimatePresence>
+              </main>
             </div>
           </motion.div>
         }
