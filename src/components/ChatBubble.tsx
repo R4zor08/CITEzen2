@@ -19,6 +19,7 @@ import {
   ChevronDownIcon,
   PlusIcon,
   PencilIcon,
+  MoreHorizontalIcon,
   SearchIcon,
   AlertTriangleIcon,
   Copy as CopyIcon,
@@ -261,9 +262,11 @@ export function ChatBubble({
     type: 'clear' | 'delete';
     chatId: string;
   } | null>(null);
+  const [openMenuSessionId, setOpenMenuSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const historySearchRef = useRef<HTMLInputElement>(null);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
       behavior: 'smooth'
@@ -291,6 +294,26 @@ export function ChatBubble({
       document.body.style.overflow = prev;
     };
   }, [isOpen, isStandaloneWindow]);
+
+  useEffect(() => {
+    if (!isOpen || view !== 'history') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (e.key === '/' || (e.key === 'k' && (e.ctrlKey || e.metaKey))) {
+        e.preventDefault();
+        historySearchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, view]);
   // --- Chat Management Actions ---
   const handleNewChat = () => {
     const newSession = createNewSession();
@@ -1024,57 +1047,55 @@ export function ChatBubble({
                 transition={{
                   duration: 0.2
                 }}
-                className="absolute inset-0 flex flex-col bg-dark-900/50">
+                className="absolute inset-0 flex flex-col bg-dark-900">
                 
+                    <div className="flex flex-col flex-1 min-h-0 w-full max-w-[320px] mx-auto">
                     {/* History Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-white/10 bg-dark-800/80 backdrop-blur-md shrink-0">
-                      <div className="flex items-center gap-2">
-                        <div className="relative flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 shrink-0">
-                          <img
-                        src={CITEZEN_LOGO}
-                        alt="CITEzen"
-                        className="h-5 w-5 object-cover rounded-full" />
-                      
-                        </div>
-                        <h3 className="text-sm font-bold text-white">
-                          Chat History
-                        </h3>
-                      </div>
+                    <div className="flex items-center justify-between px-3 py-3 border-b border-white/10 bg-dark-900 shrink-0">
+                      <h3 className="text-sm font-semibold text-white">
+                        Chats
+                      </h3>
                       <button
+                    type="button"
                     onClick={() => setOpen(false)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors">
+                    className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    aria-label="Close">
                     
                         <XIcon className="h-5 w-5" />
                       </button>
                     </div>
 
                     {/* History Search & New Chat */}
-                    <div className="p-4 border-b border-white/10 bg-dark-800/50 shrink-0 space-y-3">
+                    <div className="px-3 py-3 border-b border-white/10 bg-dark-900 shrink-0 space-y-2">
                       <button
+                    type="button"
                     onClick={handleNewChat}
-                    className="w-full py-2.5 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/30 hover:border-purple-500/50 transition-all flex items-center justify-center gap-2 text-sm font-medium">
+                    className="w-full min-h-[44px] py-2.5 rounded-lg border border-white/10 bg-transparent text-gray-200 hover:bg-white/5 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
                     
-                        <PlusIcon className="h-4 w-4" /> GabAI
+                        <PlusIcon className="h-4 w-4 shrink-0" /> New chat
                       </button>
                       <div className="relative">
-                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
                         <input
+                      ref={historySearchRef}
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search conversations..."
-                      className="w-full bg-dark-900 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50" />
+                      placeholder="Search chats…"
+                      className="w-full bg-dark-800 border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/20 focus:ring-0" />
                     
                       </div>
                     </div>
 
                     {/* History List */}
-                    <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto px-2 py-2 space-y-4 custom-scrollbar">
                       {Object.keys(groupedSessions).length === 0 ?
-                  <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-60">
-                          <MessageCircleIcon className="h-12 w-12 text-gray-500 mb-3" />
-                          <p className="text-sm text-gray-400">
-                            No conversations found.
+                  <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                          <MessageCircleIcon className="h-10 w-10 text-gray-600 mb-3" />
+                          <p className="text-sm text-gray-500">
+                            {sessions.length === 0
+                              ? 'No chats yet'
+                              : 'No conversations found'}
                           </p>
                         </div> :
 
@@ -1085,6 +1106,7 @@ export function ChatBubble({
                     return (
                       <div key={group} className="space-y-1">
                               <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             setCollapsedGroups((prev) => ({
@@ -1092,9 +1114,9 @@ export function ChatBubble({
                               [group]: !prev[group]
                             }));
                           }}
-                          className="flex items-center justify-between w-full px-2 py-1 rounded-md hover:bg-white/5 transition-colors group/header">
+                          className="flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-white/5 transition-colors group/header">
                           
-                                <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                                <h4 className="text-xs font-medium text-gray-500">
                                   {group}
                                 </h4>
                                 <motion.div
@@ -1110,39 +1132,21 @@ export function ChatBubble({
                               </button>
                               <AnimatePresence initial={false}>
                                 {!collapsedGroups[group] &&
-                          groupSessions.map((session, i) => {
+                          groupSessions.map((session) => {
                             const isActive = session.id === activeChatId;
-                            const lastMessage =
-                            session.messages[
-                            session.messages.length - 1];
-
-                            const previewText = lastMessage.attachment ?
-                            `[Attached ${lastMessage.attachment.type}]` :
-                            (lastMessage.role === 'assistant' ?
-                              formatAssistantReply(lastMessage.content) :
-                              lastMessage.content) || 'Empty message';
+                            const isMenuOpen = openMenuSessionId === session.id;
                             return (
-                              <motion.div
+                              <div
                                 key={session.id}
-                                initial={{
-                                  opacity: 0,
-                                  y: 5
-                                }}
-                                animate={{
-                                  opacity: 1,
-                                  y: 0
-                                }}
-                                transition={{
-                                  delay: i * 0.05
-                                }}
                                 onClick={() => {
+                                  if (editingChatId === session.id) return;
                                   setActiveChatId(session.id);
                                   setView('chat');
+                                  setOpenMenuSessionId(null);
                                 }}
-                                className={`group relative p-3 rounded-xl cursor-pointer transition-all border ${isActive ? 'bg-purple-500/10 border-purple-500/30' : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10'}`}>
+                                className={`group relative flex items-center min-h-[44px] px-3 py-2 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}`}>
                                 
-                                        <div className="flex items-start justify-between gap-2 mb-1">
-                                          {editingChatId === session.id ?
+                                        {editingChatId === session.id ?
                                   <input
                                     autoFocus
                                     value={editTitle}
@@ -1158,51 +1162,83 @@ export function ChatBubble({
                                       if (e.key === 'Escape')
                                       setEditingChatId(null);
                                     }}
-                                    className="bg-dark-900 border border-purple-500/50 rounded px-2 py-0.5 text-sm text-white w-full focus:outline-none"
+                                    className="flex-1 min-w-0 bg-dark-800 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-white/30"
                                     onClick={(e) =>
                                     e.stopPropagation()
                                     } /> :
 
 
-                                  <h5
-                                    className={`text-sm font-semibold truncate ${isActive ? 'text-purple-300' : 'text-gray-200'}`}>
+                                  <span
+                                    className={`flex-1 min-w-0 text-sm font-medium truncate pr-8 ${isActive ? 'text-white' : 'text-gray-200'}`}>
                                     
                                               {session.title}
-                                            </h5>
+                                            </span>
                                   }
-                                        </div>
-                                        <p className="text-xs text-gray-500 truncate">
-                                          {previewText}
-                                        </p>
 
-                                        {/* Hover Actions */}
-                                        <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 flex items-center gap-1 bg-dark-800/90 backdrop-blur-sm rounded-lg p-1 border border-white/10 shadow-lg transition-opacity">
-                                          <button
+                                        {/* Row menu */}
+                                        <button
+                                    type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setEditTitle(session.title);
-                                      setEditingChatId(session.id);
+                                      setOpenMenuSessionId(
+                                        isMenuOpen ? null : session.id
+                                      );
                                     }}
-                                    className="p-1.5 rounded hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                                    title="Rename">
+                                    className={`absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-md text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0 ${isMenuOpen ? 'opacity-100 bg-white/10' : 'opacity-0 group-hover:opacity-100 max-md:opacity-100'}`}
+                                    aria-label="Chat options">
                                     
-                                            <PencilIcon className="h-3.5 w-3.5" />
+                                            <MoreHorizontalIcon className="h-4 w-4" />
                                           </button>
-                                          <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setConfirmAction({
-                                        type: 'delete',
-                                        chatId: session.id
-                                      });
-                                    }}
-                                    className="p-1.5 rounded hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
-                                    title="Delete">
-                                    
-                                            <Trash2Icon className="h-3.5 w-3.5" />
-                                          </button>
-                                        </div>
-                                      </motion.div>);
+
+                                        <AnimatePresence>
+                                          {isMenuOpen &&
+                                    <>
+                                              <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenMenuSessionId(null);
+                                        }} />
+                                      
+                                              <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        transition={{ duration: 0.12 }}
+                                        className="absolute right-0 top-full mt-1 z-50 w-36 bg-dark-800 border border-white/10 rounded-lg shadow-xl overflow-hidden py-1"
+                                        onClick={(e) => e.stopPropagation()}>
+                                        
+                                                <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditTitle(session.title);
+                                            setEditingChatId(session.id);
+                                            setOpenMenuSessionId(null);
+                                          }}
+                                          className="w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10 flex items-center gap-2">
+                                          
+                                                  <PencilIcon className="h-3.5 w-3.5 text-gray-400" />
+                                                  Rename
+                                                </button>
+                                                <button
+                                          type="button"
+                                          onClick={() => {
+                                            setConfirmAction({
+                                              type: 'delete',
+                                              chatId: session.id
+                                            });
+                                            setOpenMenuSessionId(null);
+                                          }}
+                                          className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2">
+                                          
+                                                  <Trash2Icon className="h-3.5 w-3.5" />
+                                                  Delete
+                                                </button>
+                                              </motion.div>
+                                            </>
+                                    }
+                                        </AnimatePresence>
+                                      </div>);
 
                           })}
                               </AnimatePresence>
@@ -1210,6 +1246,7 @@ export function ChatBubble({
 
                   })
                   }
+                    </div>
                     </div>
                   </motion.div> :
 
