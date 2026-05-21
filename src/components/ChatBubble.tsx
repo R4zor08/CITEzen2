@@ -10,14 +10,14 @@ import {
   SendIcon,
   UserIcon,
   Loader2Icon,
-  Trash2Icon,
   FileTextIcon,
   FileIcon,
   DownloadIcon,
   UploadCloudIcon,
   FileSpreadsheetIcon,
-  MenuIcon,
-  PlusIcon,
+  PanelLeftIcon,
+  PanelLeftCloseIcon,
+  PaperclipIcon,
   PencilIcon,
   AlertTriangleIcon,
   Copy as CopyIcon,
@@ -160,7 +160,7 @@ export function ChatBubble({
     },
     [isStandaloneWindow, onOpenChange, openControlled]
   );
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const createInitialGreeting = (): Message => ({
     role: 'assistant',
@@ -284,10 +284,6 @@ export function ChatBubble({
   );
 
   useEffect(() => {
-    if (isDesktop) setIsHistoryOpen(false);
-  }, [isDesktop]);
-
-  useEffect(() => {
     if (isStandaloneWindow) return;
     if (!isOpen) return;
     const prev = document.body.style.overflow;
@@ -298,7 +294,14 @@ export function ChatBubble({
   }, [isOpen, isStandaloneWindow]);
 
   useEffect(() => {
-    if (!isOpen || (!isDesktop && !isHistoryOpen)) return;
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+  }, [input, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !isSidebarOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (
@@ -315,13 +318,13 @@ export function ChatBubble({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, isDesktop, isHistoryOpen]);
+  }, [isOpen, isSidebarOpen]);
   // --- Chat Management Actions ---
   const handleNewChat = () => {
     const newSession = createNewSession();
     setSessions((prev) => [newSession, ...prev]);
     setActiveChatId(newSession.id);
-    if (!isDesktop) setIsHistoryOpen(false);
+    if (!isDesktop) setIsSidebarOpen(false);
     setStagedAttachment(null);
     setInput('');
     setInlineEditIndex(null);
@@ -331,7 +334,7 @@ export function ChatBubble({
   const handleSelectSession = (id: string) => {
     setActiveChatId(id);
     setOpenMenuSessionId(null);
-    if (!isDesktop) setIsHistoryOpen(false);
+    if (!isDesktop) setIsSidebarOpen(false);
   };
 
   const stopStreaming = () => {
@@ -1065,19 +1068,27 @@ export function ChatBubble({
             </AnimatePresence>
 
             <div className="flex flex-1 min-h-0 overflow-hidden">
-              <aside className="hidden md:flex flex-col w-[260px] shrink-0 border-r border-white/10 bg-dark-900 min-h-0">
-                <ChatHistorySidebar {...historySidebarProps} />
-              </aside>
+              <motion.aside
+                initial={false}
+                animate={{
+                  width: isSidebarOpen ? 260 : 0
+                }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className={`hidden md:flex flex-col shrink-0 bg-dark-900 min-h-0 overflow-hidden border-r border-white/10 ${isSidebarOpen ? '' : 'border-r-0'}`}>
+                <div className="flex flex-col w-[260px] min-h-0 h-full">
+                  <ChatHistorySidebar {...historySidebarProps} />
+                </div>
+              </motion.aside>
 
               <AnimatePresence>
-                {isHistoryOpen && !isDesktop && (
+                {isSidebarOpen && !isDesktop && (
                   <>
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
-                      onClick={() => setIsHistoryOpen(false)}
+                      onClick={() => setIsSidebarOpen(false)}
                     />
                     <motion.aside
                       initial={{ x: '-100%' }}
@@ -1089,7 +1100,7 @@ export function ChatBubble({
                       <ChatHistorySidebar
                         {...historySidebarProps}
                         showCloseButton
-                        onClose={() => setIsHistoryOpen(false)}
+                        onClose={() => setIsSidebarOpen(false)}
                       />
                     </motion.aside>
                   </>
@@ -1104,10 +1115,13 @@ export function ChatBubble({
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <button
                       type="button"
-                      onClick={() => setIsHistoryOpen(true)}
-                      className="md:hidden p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      aria-label="Open chats">
-                      <MenuIcon className="h-5 w-5" />
+                      onClick={() => setIsSidebarOpen((v) => !v)}
+                      className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label={isSidebarOpen ? 'Close sidebar' : 'Open chats'}
+                      title={isSidebarOpen ? 'Close sidebar' : 'Open chats'}>
+                      {isSidebarOpen ?
+                      <PanelLeftCloseIcon className="h-5 w-5" /> :
+                      <PanelLeftIcon className="h-5 w-5" />}
                         </button>
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="relative shrink-0">
@@ -1143,28 +1157,10 @@ export function ChatBubble({
                       </div>
                       <div className="flex items-center gap-1 shrink-0 ml-2">
                         <button
-                      onClick={handleNewChat}
-                      className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-purple-400 transition-colors"
-                      title="GabAI">
-                      
-                          <PlusIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                      onClick={() =>
-                      setConfirmAction({
-                        type: 'clear',
-                        chatId: activeChatId
-                      })
-                      }
-                      className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-red-400 transition-colors"
-                      title="Clear Chat">
-                      
-                          <Trash2Icon className="h-4 w-4" />
-                        </button>
-                        <div className="w-px h-4 bg-white/10 mx-1" />
-                        <button
+                      type="button"
                       onClick={() => setOpen(false)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors">
+                      className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+                      aria-label="Close chat">
                       
                           <XIcon className="h-5 w-5" />
                         </button>
@@ -1610,6 +1606,8 @@ export function ChatBubble({
                     </div>
 
                     {/* Preview Bar */}
+                    <div className="chat-composer-shell shrink-0 px-3 sm:px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
+                      <div className="mx-auto w-full max-w-3xl">
                     <AnimatePresence>
                       {(stagedAttachment || isProcessingFile) &&
                   <motion.div
@@ -1625,7 +1623,7 @@ export function ChatBubble({
                       opacity: 0,
                       height: 0
                     }}
-                    className="px-3 pt-3 bg-dark-800/80 backdrop-blur-md border-t border-white/10">
+                    className="mb-2">
                     
                           <div className="bg-dark-900 border border-white/10 rounded-xl p-2 flex items-center gap-3 relative overflow-hidden">
                             {isProcessingFile ?
@@ -1701,7 +1699,6 @@ export function ChatBubble({
                     </AnimatePresence>
 
                     {/* Input Area */}
-                    <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] border-t border-white/10 bg-dark-800/80 backdrop-blur-md shrink-0">
                       {inlineEditIndex !== null &&
                       <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-200">
                           <span className="truncate">
@@ -1719,21 +1716,19 @@ export function ChatBubble({
                           </button>
                         </div>
                       }
-                      <div className="flex items-center gap-2.5">
-                        <input
+                      <input
                       type="file"
                       ref={fileInputRef}
                       className="hidden"
                       onChange={(e) => {
                         if (e.target.files && e.target.files.length > 0) {
                           processFile(e.target.files[0]);
-                          e.target.value = ''; // reset
+                          e.target.value = '';
                         }
                       }}
                       accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
-                    
-                        <div
-                      className="chat-composer-pill min-w-0"
+                      <div
+                      className="chat-composer-box flex items-end gap-1 min-h-[3rem] pl-4 pr-2 py-2"
                       title="Type a message. Drag and drop a file onto the chat to attach.">
                       
                           <textarea
@@ -1742,28 +1737,40 @@ export function ChatBubble({
                         onKeyDown={handleKeyDown}
                         placeholder="Ask anything"
                         ref={inputRef}
-                        className="chat-composer-input custom-scrollbar max-h-32"
+                        className="chat-composer-input flex-1 min-w-0 custom-scrollbar"
                         rows={1}
                         disabled={isLoading || isStreaming || inlineEditIndex !== null} />
-                        </div>
-                        <button
-                      type="button"
-                      onClick={() => (isStreaming ? stopStreaming() : handleSend())}
-                      disabled={
-                      (!isStreaming && !input.trim() && !stagedAttachment) ||
-                      isLoading ||
-                      isProcessingFile ||
-                      (!isStreaming && inlineEditIndex !== null)
-                      }
-                      title={isStreaming ? 'Stop' : 'Send'}
-                      className={`chat-composer-send disabled:opacity-40 disabled:shadow-none disabled:pointer-events-none ${isStreaming ? 'chat-composer-send-stop' : ''}`}>
-                      
-                          {isLoading ?
-                      <Loader2Icon className="h-5 w-5 animate-spin" /> :
+                        <div className="chat-composer-actions flex items-center gap-0.5 shrink-0 pb-0.5">
+                          <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isLoading || isStreaming || isProcessingFile || inlineEditIndex !== null}
+                        className="chat-composer-attach"
+                        title="Attach file"
+                        aria-label="Attach file">
+                        
+                            <PaperclipIcon className="h-5 w-5" />
+                          </button>
+                          <button
+                        type="button"
+                        onClick={() => (isStreaming ? stopStreaming() : handleSend())}
+                        disabled={
+                        (!isStreaming && !input.trim() && !stagedAttachment) ||
+                        isLoading ||
+                        isProcessingFile ||
+                        (!isStreaming && inlineEditIndex !== null)
+                        }
+                        title={isStreaming ? 'Stop' : 'Send'}
+                        aria-label={isStreaming ? 'Stop' : 'Send'}
+                        className={`chat-composer-send disabled:opacity-40 disabled:shadow-none disabled:pointer-events-none ${isStreaming ? 'chat-composer-send-stop' : ''}`}>
+                        
+                            {isLoading ?
+                        <Loader2Icon className="h-5 w-5 animate-spin" /> :
 
-                      isStreaming ? <XIcon className="h-5 w-5" /> : <SendIcon className="h-5 w-5" />
-                      }
-                        </button>
+                        isStreaming ? <XIcon className="h-5 w-5" /> : <SendIcon className="h-5 w-5" />
+                        }
+                          </button>
+                        </div>
                       </div>
                       {isStreaming &&
                       <div className="mt-1.5 text-[11px] text-gray-500 flex items-center justify-end">
@@ -1774,6 +1781,7 @@ export function ChatBubble({
                           to interrupt.
                         </div>
                       }
+                      </div>
                     </div>
               </main>
             </div>

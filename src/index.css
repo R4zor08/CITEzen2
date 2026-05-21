@@ -39,8 +39,8 @@
   --chat-attach-row-asst-border: rgba(255, 255, 255, 0.1);
   --chat-attach-icon-asst-bg: rgba(0, 0, 0, 0.35);
   /* GabAI composer (pill field + send) */
-  --chat-composer-bg: #161618;
-  --chat-composer-border: rgba(255, 255, 255, 0.14);
+  --chat-composer-bg: #2f2f2f;
+  --chat-composer-border: rgba(255, 255, 255, 0.08);
   --chat-composer-text: #f3f4f6;
   --chat-composer-placeholder: #9ca3af;
 }
@@ -185,34 +185,66 @@
   .light .chat-inline-cancel-btn:hover {
     background: rgba(0, 0, 0, 0.06);
   }
-  .chat-composer-pill {
-    flex: 1 1 auto;
+  .chat-composer-shell {
+    background: transparent;
+  }
+  .chat-composer-box {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
+    gap: 0.25rem;
     min-height: 3rem;
     border-radius: 9999px;
     border: 1px solid var(--chat-composer-border);
     background: var(--chat-composer-bg);
-    padding-left: 1.125rem;
-    padding-right: 1.125rem;
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
   }
-  .chat-composer-pill:focus-within {
-    border-color: rgba(139, 92, 246, 0.45);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+  .chat-composer-box:focus-within {
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+  .light .chat-composer-box:focus-within {
+    border-color: rgba(0, 0, 0, 0.16);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
   }
   .chat-composer-input {
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     border: 0;
     background: transparent;
     color: var(--chat-composer-text);
     resize: none;
     outline: none;
-    min-height: 2.5rem;
-    max-height: 8rem;
+    min-height: 1.5rem;
+    max-height: 12.5rem;
     font-size: 0.9375rem;
     line-height: 1.5;
-    padding: 0.5rem 0;
+    padding: 0.25rem 0;
+    overflow-y: auto;
+  }
+  .chat-composer-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    flex-shrink: 0;
+  }
+  .chat-composer-attach {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    color: var(--chat-composer-placeholder);
+    background: transparent;
+    transition: color 0.15s ease, opacity 0.15s ease;
+  }
+  .chat-composer-attach:hover:not(:disabled) {
+    color: var(--chat-composer-text);
+  }
+  .chat-composer-attach:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
   .chat-composer-input::placeholder {
     color: var(--chat-composer-placeholder);
@@ -225,8 +257,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 2.25rem;
+    height: 2.25rem;
     border-radius: 9999px;
     flex-shrink: 0;
     transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease,
