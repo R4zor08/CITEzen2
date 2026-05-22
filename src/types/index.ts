@@ -36,6 +36,8 @@ export interface ConcernAttachment {
   size: number;
   dataUrl: string;
   field?: string;
+  /** Set after Sightengine verification passes (Supporting Documents). */
+  verified?: boolean;
 }
 
 export interface Concern {

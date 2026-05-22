@@ -7,6 +7,7 @@ import {
   addCommentRequestSchema,
   concernIdParamSchema,
   createConcernRequestSchema,
+  verifyAttachmentRequestSchema,
   forwardConcernRequestSchema,
   listConcernsQuerySchema,
   updateConcernRequestSchema
@@ -27,6 +28,13 @@ export function concernRoutes() {
     requireRoles('student', 'staff', 'admin'),
     validateParams(concernIdParamSchema),
     controller.getConcern
+  );
+  router.post(
+    '/api/concerns/attachments/verify',
+    requireAuth,
+    requireRoles('student'),
+    validateBody(verifyAttachmentRequestSchema),
+    controller.verifyAttachment
   );
   router.post(
     '/api/concerns',

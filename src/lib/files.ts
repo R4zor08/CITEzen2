@@ -17,6 +17,22 @@ export function isValidConcernMimeType(mimeType: string): boolean {
   return (VALID_CONCERN_MIME_TYPES as readonly string[]).includes(mimeType);
 }
 
+/** PNG/JPEG only — used for Supporting Documents authenticity checks. */
+export const VERIFIED_IMAGE_MIME_TYPES = ['image/png', 'image/jpeg'] as const;
+
+export function isVerifiedImageMimeType(mimeType: string): boolean {
+  return (VERIFIED_IMAGE_MIME_TYPES as readonly string[]).includes(mimeType);
+}
+
+export function normalizeImageMimeType(mimeType: string, fileName: string): string {
+  if (mimeType === 'image/jpg') return 'image/jpeg';
+  if (mimeType && mimeType !== 'application/octet-stream') return mimeType;
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  return mimeType;
+}
+
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

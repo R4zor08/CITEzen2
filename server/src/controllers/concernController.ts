@@ -4,6 +4,7 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '../http/httpErro
 import { commentToApi, concernToApi } from '../mappers.js';
 import type { ConcernAttachment, Role } from '../types.js';
 import * as concernService from '../services/concernService.js';
+import * as concernAttachmentService from '../services/concernAttachmentService.js';
 
 export async function listConcerns(req: Request, res: Response, next: NextFunction) {
   try {
@@ -31,6 +32,21 @@ export async function getConcern(req: Request, res: Response, next: NextFunction
     const c = await concernService.getConcern(req.params.id);
     if (!c) throw new NotFoundError('Concern not found');
     ok(res, concernToApi(c));
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function verifyAttachment(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new ForbiddenError('Authentication required');
+    if (req.user.role !== 'student') {
+      throw new ForbiddenError('Only students can verify concern attachments');
+    }
+
+    const b = req.body as { dataUrl: string; fileName: string; mimeType: string };
+    const result = await concernAttachmentService.verifyAttachmentPayload(b);
+    ok(res, result);
   } catch (e) {
     next(e);
   }

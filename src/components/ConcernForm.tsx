@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { User, Template, Concern, ConcernAttachment } from '../types';
 import { categories, templates } from '../data/templates';
 import { FileUploadZone } from './FileUploadZone';
+import {
+  requiresAuthenticityVerification
+} from '../lib/concernAttachments';
 import {
   BookOpenIcon,
   FileTextIcon,
@@ -9,8 +13,9 @@ import {
   MessageSquareWarningIcon,
   ArrowLeftIcon,
   CheckCircle2Icon,
-  AlertCircleIcon } from
-'lucide-react';
+  AlertCircleIcon,
+  ShieldIcon
+} from 'lucide-react';
 interface ConcernFormProps {
   user: User;
   onSubmit: (concern: Partial<Concern>) => void | Promise<void>;
@@ -62,6 +67,24 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTemplate) return;
+
+    const unverifiedSupporting = selectedTemplate.fields
+      .filter(
+        (f) =>
+          f.type === 'file' &&
+          requiresAuthenticityVerification(f.name, f.label)
+      )
+      .flatMap((f) => filesByField[f.name] ?? [])
+      .filter((file) => !file.verified);
+
+    if (unverifiedSupporting.length > 0) {
+      toast.error('Supporting documents must be verified before submitting.', {
+        description:
+          'Upload PNG or JPG images and wait for authenticity verification to complete.'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     const { title, description, ...restFormData } = formData;
     const fileFieldNames = new Set(
@@ -275,12 +298,29 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
                 Specific Details
               </h4>
 
-              {selectedTemplate.fields.map((field) =>
+              {selectedTemplate.fields.map((field) => {
+                const needsVerification =
+                  field.type === 'file' &&
+                  requiresAuthenticityVerification(field.name, field.label);
+                return (
             <div key={field.name} className="space-y-1.5">
-                  <label className="citezen-label" htmlFor={`field-${field.name}`}>
-                    {field.label}{' '}
-                    {field.required && <span className="text-red-400">*</span>}
-                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="citezen-label" htmlFor={`field-${field.name}`}>
+                      {field.label}{' '}
+                      {field.required && <span className="text-red-400">*</span>}
+                    </label>
+                    {needsVerification ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-cyan-300/90">
+                        <ShieldIcon className="h-3 w-3" aria-hidden />
+                        AI check
+                      </span>
+                    ) : null}
+                  </div>
+                  {needsVerification ? (
+                    <p className="text-xs text-gray-500 -mt-0.5">
+                      Upload original photos only — images are verified before submit.
+                    </p>
+                  ) : null}
 
                   {field.type === 'text' || field.type === 'date' ?
               <input
@@ -330,10 +370,12 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
                   setFilesByField((prev) => ({ ...prev, [field.name]: files }))
                 }
                 disabled={isSubmitting}
+                requireAuthenticityVerification={needsVerification}
               /> :
               null}
                 </div>
-            )}
+            );
+              })}
             </div>
 
             {/* Priority Selection */}

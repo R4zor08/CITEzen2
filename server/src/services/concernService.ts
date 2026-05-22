@@ -1,5 +1,6 @@
 import type { ConcernAttachment, Priority, Role } from '../types.js';
 import { statusFromApi } from '../mappers.js';
+import { validateAttachmentsForCreate } from './concernAttachmentService.js';
 import * as concerns from '../repositories/concernRepository.js';
 import * as users from '../repositories/userRepository.js';
 import * as comments from '../repositories/commentRepository.js';
@@ -37,6 +38,11 @@ export async function createConcern(args: {
 }) {
   const student = await users.findUserById(args.studentId);
   if (!student) return { error: 'Student user not found' as const };
+
+  const attachmentCheck = await validateAttachmentsForCreate(args.attachments);
+  if ('error' in attachmentCheck) {
+    return { error: attachmentCheck.error } as const;
+  }
 
   const c = await concerns.createConcern({
     title: args.title ?? 'Untitled Concern',
