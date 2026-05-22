@@ -42,4 +42,22 @@ API base: `http://localhost:3001` (override with `PORT` in `.env`).
 | PATCH | `/api/notifications/:id/read` | Mark read |
 | POST | `/api/notifications/mark-all-read` | `{ userId }` |
 
-Wire the Vite app to this API in a follow-up (replace `localStorage` / mock hooks with `fetch`).
+## GabAI chat (Groq)
+
+Set in `.env`:
+
+```env
+GROQ_API_KEY=your_key_from_groq_console
+```
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/chat/sessions` | List chat sessions (auth required) |
+| POST | `/api/chat/sessions` | Create session |
+| POST | `/api/chat/sessions/import` | One-time localStorage migration |
+| GET | `/api/chat/sessions/:id/messages` | Session + messages |
+| PATCH | `/api/chat/sessions/:id` | Rename session |
+| DELETE | `/api/chat/sessions/:id` | Delete session |
+| POST | `/api/chat/stream` | Streaming chat (JSON body with `messages`, OpenAI-compatible SSE) |
+
+GabAI uses Groq text-only models (default `llama-3.3-70b-versatile`). File attachments in the UI are described in message text; Groq does not analyze images or PDFs server-side.

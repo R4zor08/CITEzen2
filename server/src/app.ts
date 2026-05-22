@@ -10,6 +10,7 @@ export function createApp() {
   app.use(cors({ origin: corsOriginOption() }));
   // Default 100kb is too small for profile avatars stored as base64 data URLs
   app.use(express.json({ limit: process.env.JSON_BODY_LIMIT ?? '15mb' }));
+  app.use(express.urlencoded({ extended: true, limit: process.env.JSON_BODY_LIMIT ?? '15mb' }));
 
   registerRoutes(app);
   app.use((_req, res) => {
