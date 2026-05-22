@@ -43,6 +43,36 @@
   --chat-composer-border: rgba(255, 255, 255, 0.08);
   --chat-composer-text: #f3f4f6;
   --chat-composer-placeholder: #9ca3af;
+  /* File upload — AI rejection alert */
+  --verify-reject-bg: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(239, 68, 68, 0.06) 50%, transparent 100%);
+  --verify-reject-bg-manipulated: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.06) 50%, transparent 100%);
+  --verify-reject-border: rgba(245, 158, 11, 0.35);
+  --verify-reject-border-manipulated: rgba(239, 68, 68, 0.35);
+  --verify-reject-accent: #f59e0b;
+  --verify-reject-accent-manipulated: #ef4444;
+  --verify-reject-title: #fde68a;
+  --verify-reject-message: #9ca3af;
+  --verify-reject-hint: #6b7280;
+  --verify-reject-thumb-bg: #0a0a0f;
+  --verify-reject-thumb-overlay: rgba(69, 26, 3, 0.55);
+  --verify-reject-pill-ai-bg: rgba(245, 158, 11, 0.15);
+  --verify-reject-pill-ai-text: #fcd34d;
+  --verify-reject-pill-face-bg: rgba(239, 68, 68, 0.15);
+  --verify-reject-pill-face-text: #fca5a5;
+  --verify-reject-btn-bg: rgba(245, 158, 11, 0.18);
+  --verify-reject-btn-text: #fde68a;
+  --verify-reject-btn-border: rgba(245, 158, 11, 0.35);
+  --verify-reject-btn-hover: rgba(245, 158, 11, 0.28);
+  --verify-reject-icon-bg: rgba(245, 158, 11, 0.2);
+  --verify-reject-icon-fg: #fbbf24;
+  --verify-reject-shadow: 0 4px 24px rgba(245, 158, 11, 0.08);
+  --verify-reject-drop-border: rgba(245, 158, 11, 0.45);
+  --verify-reject-drop-bg: rgba(245, 158, 11, 0.06);
+  --verify-info-bg: linear-gradient(135deg, rgba(34, 211, 238, 0.08) 0%, transparent 50%, rgba(16, 185, 129, 0.06) 100%);
+  --verify-info-border: rgba(34, 211, 238, 0.22);
+  --verify-success-border: rgba(16, 185, 129, 0.28);
+  --verify-success-bg: rgba(16, 185, 129, 0.08);
+  --verify-success-text: #6ee7b7;
 }
 .light {
   --bg-primary: #f5f6fa;
@@ -77,6 +107,35 @@
   --chat-composer-border: rgba(0, 0, 0, 0.12);
   --chat-composer-text: #111827;
   --chat-composer-placeholder: #6b7280;
+  --verify-reject-bg: linear-gradient(135deg, rgba(254, 243, 199, 0.95) 0%, rgba(255, 237, 213, 0.7) 40%, rgba(255, 255, 255, 0.9) 100%);
+  --verify-reject-bg-manipulated: linear-gradient(135deg, rgba(254, 226, 226, 0.95) 0%, rgba(255, 237, 213, 0.5) 50%, rgba(255, 255, 255, 0.95) 100%);
+  --verify-reject-border: rgba(217, 119, 6, 0.35);
+  --verify-reject-border-manipulated: rgba(220, 38, 38, 0.32);
+  --verify-reject-accent: #d97706;
+  --verify-reject-accent-manipulated: #dc2626;
+  --verify-reject-title: #92400e;
+  --verify-reject-message: #57534e;
+  --verify-reject-hint: #78716c;
+  --verify-reject-thumb-bg: #f5f5f4;
+  --verify-reject-thumb-overlay: rgba(120, 53, 15, 0.25);
+  --verify-reject-pill-ai-bg: rgba(254, 243, 199, 0.9);
+  --verify-reject-pill-ai-text: #b45309;
+  --verify-reject-pill-face-bg: rgba(254, 226, 226, 0.95);
+  --verify-reject-pill-face-text: #b91c1c;
+  --verify-reject-btn-bg: rgba(254, 243, 199, 0.8);
+  --verify-reject-btn-text: #92400e;
+  --verify-reject-btn-border: rgba(217, 119, 6, 0.4);
+  --verify-reject-btn-hover: rgba(253, 230, 138, 1);
+  --verify-reject-icon-bg: rgba(254, 243, 199, 0.9);
+  --verify-reject-icon-fg: #d97706;
+  --verify-reject-shadow: 0 4px 20px rgba(217, 119, 6, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --verify-reject-drop-border: rgba(217, 119, 6, 0.5);
+  --verify-reject-drop-bg: rgba(254, 243, 199, 0.45);
+  --verify-info-bg: linear-gradient(135deg, rgba(207, 250, 254, 0.6) 0%, transparent 50%, rgba(209, 250, 229, 0.4) 100%);
+  --verify-info-border: rgba(6, 182, 212, 0.25);
+  --verify-success-border: rgba(5, 150, 105, 0.28);
+  --verify-success-bg: rgba(209, 250, 229, 0.5);
+  --verify-success-text: #047857;
 }
 @layer utilities {
   .glass-panel {
@@ -138,6 +197,245 @@
   .citezen-safe-bottom {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   }
+
+  /* File upload — authenticity info & AI rejection (light + dark via CSS variables) */
+  .verify-info-panel {
+    border-radius: 0.75rem;
+    border: 1px solid var(--verify-info-border);
+    background: var(--verify-info-bg);
+    padding: 0.875rem 1rem;
+  }
+  @media (min-width: 640px) {
+    .verify-info-panel {
+      padding: 1rem;
+    }
+  }
+  .verify-info-icon {
+    display: flex;
+    height: 2.5rem;
+    width: 2.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    border: 1px solid var(--verify-info-border);
+    background: rgba(34, 211, 238, 0.12);
+    color: #22d3ee;
+  }
+  .light .verify-info-icon {
+    background: rgba(207, 250, 254, 0.8);
+    color: #0891b2;
+  }
+  .verify-info-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .verify-info-desc {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+  .verify-rejection-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid var(--verify-reject-border);
+    background: var(--verify-reject-bg);
+    box-shadow: var(--verify-reject-shadow);
+    padding: 0.875rem 1rem;
+  }
+  .verify-rejection-card--manipulated {
+    border-color: var(--verify-reject-border-manipulated);
+    background: var(--verify-reject-bg-manipulated);
+  }
+  .verify-rejection-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--verify-reject-accent);
+    border-radius: 0.75rem 0 0 0.75rem;
+  }
+  .verify-rejection-card--manipulated::before {
+    background: var(--verify-reject-accent-manipulated);
+  }
+  .verify-rejection-icon-wrap {
+    display: flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    background: var(--verify-reject-icon-bg);
+    color: var(--verify-reject-icon-fg);
+    border: 1px solid var(--verify-reject-border);
+  }
+  .verify-rejection-card--manipulated .verify-rejection-icon-wrap {
+    background: var(--verify-reject-pill-face-bg);
+    color: var(--verify-reject-accent-manipulated);
+    border-color: var(--verify-reject-border-manipulated);
+  }
+  .verify-rejection-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--verify-reject-title);
+    line-height: 1.35;
+  }
+  .verify-rejection-filename {
+    font-size: 0.6875rem;
+    color: var(--verify-reject-hint);
+    margin-top: 0.125rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  .verify-rejection-message {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--verify-reject-message);
+  }
+  .verify-rejection-hint {
+    font-size: 0.6875rem;
+    color: var(--verify-reject-hint);
+  }
+  .verify-rejection-thumb {
+    position: relative;
+    height: 3.5rem;
+    width: 3.5rem;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid var(--verify-reject-border);
+    background: var(--verify-reject-thumb-bg);
+  }
+  .verify-rejection-card--manipulated .verify-rejection-thumb,
+  .verify-rejection-thumb.verify-rejection-card--manipulated {
+    border-color: var(--verify-reject-border-manipulated);
+  }
+  .verify-scan-overlay {
+    background: color-mix(in srgb, var(--bg-primary) 78%, transparent);
+  }
+  .verify-rejection-thumb img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    opacity: 0.55;
+    filter: saturate(0.65);
+  }
+  .verify-rejection-thumb-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--verify-reject-thumb-overlay);
+  }
+  .verify-rejection-thumb-badge {
+    position: absolute;
+    bottom: 0.125rem;
+    right: 0.125rem;
+    display: flex;
+    height: 1.25rem;
+    width: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: var(--verify-reject-accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+  .verify-rejection-card--manipulated .verify-rejection-thumb-badge {
+    background: var(--verify-reject-accent-manipulated);
+  }
+  .verify-rejection-pill-ai {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    border: 1px solid var(--verify-reject-border);
+    background: var(--verify-reject-pill-ai-bg);
+    padding: 0.125rem 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--verify-reject-pill-ai-text);
+    font-variant-numeric: tabular-nums;
+  }
+  .verify-rejection-pill-face {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    border: 1px solid var(--verify-reject-border-manipulated);
+    background: var(--verify-reject-pill-face-bg);
+    padding: 0.125rem 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--verify-reject-pill-face-text);
+    font-variant-numeric: tabular-nums;
+  }
+  .verify-rejection-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--verify-reject-btn-border);
+    background: var(--verify-reject-btn-bg);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--verify-reject-btn-text);
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .verify-rejection-btn:hover {
+    background: var(--verify-reject-btn-hover);
+  }
+  .verify-rejection-dismiss {
+    flex-shrink: 0;
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+    color: var(--text-muted);
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .verify-rejection-dismiss:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+  .verify-drop-flash {
+    border-color: var(--verify-reject-drop-border) !important;
+    background: var(--verify-reject-drop-bg) !important;
+  }
+  .verify-success-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--verify-success-border);
+    background: var(--verify-success-bg);
+    padding: 0.5rem 0.75rem;
+  }
+  .verify-success-bar-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--verify-success-text);
+  }
+  .verify-file-verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid var(--verify-success-border);
+    background: var(--verify-success-bg);
+    padding: 0.125rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--verify-success-text);
+  }
+
   /* GabAI chat bubbles — theme via :root / .light variables */
   .chat-bubble-assistant,
   .chat-bubble-user {

@@ -68,7 +68,7 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
     e.preventDefault();
     if (!selectedTemplate) return;
 
-    const unverifiedSupporting = selectedTemplate.fields
+    const unverifiedFiles = selectedTemplate.fields
       .filter(
         (f) =>
           f.type === 'file' &&
@@ -77,11 +77,10 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
       .flatMap((f) => filesByField[f.name] ?? [])
       .filter((file) => !file.verified);
 
-    if (unverifiedSupporting.length > 0) {
-      toast.error('Supporting documents must be verified before submitting.', {
-        description:
-          'Upload PNG or JPG images and wait for authenticity verification to complete.'
-      });
+    if (unverifiedFiles.length > 0) {
+      toast.error(
+        'Please upload and verify the required files before submitting your concern.'
+      );
       return;
     }
 
@@ -365,6 +364,7 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
               field.type === 'file' ?
               <FileUploadZone
                 fieldName={field.name}
+                fieldLabel={field.label}
                 files={filesByField[field.name] ?? []}
                 onChange={(files) =>
                   setFilesByField((prev) => ({ ...prev, [field.name]: files }))

@@ -58,9 +58,10 @@ export const forwardConcernRequestSchema = z.object({
 });
 export type ForwardConcernRequest = z.infer<typeof forwardConcernRequestSchema>;
 
-const verifiedImageMimeSchema = z.enum(['image/png', 'image/jpeg']);
+const verifiedImageMimeSchema = z.enum(['image/png', 'image/jpeg', 'image/jpg']);
 
 export const verifyAttachmentRequestSchema = z.object({
+  fieldName: z.enum(['Supporting Documents', 'Affidavit of Loss', 'Photo of Issue']),
   dataUrl: z.string().min(1),
   fileName: z.string().min(1),
   mimeType: verifiedImageMimeSchema

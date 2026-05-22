@@ -1,7 +1,8 @@
 import {
   dataUrlFromBase64,
   isVerifiedImageMimeType,
-  parseDataUrl
+  parseDataUrl,
+  UNSUPPORTED_MIME_MESSAGE
 } from '../lib/attachmentVerification.js';
 
 export type SightengineVerificationResult = {
@@ -12,6 +13,9 @@ export type SightengineVerificationResult = {
 };
 
 const SIGHTENGINE_CHECK_URL = 'https://api.sightengine.com/1.0/check.json';
+
+const PASS_MESSAGE = 'File verified successfully.';
+const API_ERROR_MESSAGE = 'Unable to verify the file. Please try again.';
 
 function readThreshold(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -37,14 +41,30 @@ function extractScores(body: Record<string, unknown>): { genai: number; deepfake
   };
 }
 
-function buildFailureMessage(genai: number, deepfake: number, genaiThreshold: number, deepfakeThreshold: number): string {
+function buildFailureMessage(
+  genai: number,
+  deepfake: number,
+  genaiThreshold: number,
+  deepfakeThreshold: number
+): string {
   if (genai > genaiThreshold) {
-    return 'This image appears to be AI-generated. Please upload a real supporting document.';
+    return 'This file appears to be AI-generated. Please upload a real document/photo.';
   }
   if (deepfake > deepfakeThreshold) {
-    return 'This image appears to be manipulated or deepfaked. Please upload an authentic supporting document.';
+    return 'This file appears to be manipulated. Please upload a real document/photo.';
   }
-  return 'This image did not pass authenticity verification.';
+  return 'This file did not pass authenticity verification.';
+}
+
+function prefixContextMessage(contextLabel: string | undefined, message: string): string {
+  if (!contextLabel) return message;
+  if (message.startsWith('This file appears to be AI-generated')) {
+    return `${contextLabel} appears to be AI-generated. Please upload a real document/photo.`;
+  }
+  if (message.startsWith('This file appears to be manipulated')) {
+    return `${contextLabel} appears to be manipulated. Please upload a real document/photo.`;
+  }
+  return message;
 }
 
 export async function verifyImageAttachment(input: {
@@ -52,6 +72,7 @@ export async function verifyImageAttachment(input: {
   base64?: string;
   mimeType: string;
   fileName?: string;
+  contextLabel?: string;
 }): Promise<SightengineVerificationResult> {
   const credentials = getCredentials();
   if (!credentials) {
@@ -68,7 +89,7 @@ export async function verifyImageAttachment(input: {
       ok: false,
       genai: 0,
       deepfake: 0,
-      message: 'Only PNG and JPG images can be verified for authenticity.'
+      message: UNSUPPORTED_MIME_MESSAGE
     };
   }
 
@@ -81,7 +102,7 @@ export async function verifyImageAttachment(input: {
           ok: false,
           genai: 0,
           deepfake: 0,
-          message: 'Only PNG and JPG images can be verified for authenticity.'
+          message: UNSUPPORTED_MIME_MESSAGE
         };
       }
       buffer = parsed.buffer;
@@ -128,7 +149,7 @@ export async function verifyImageAttachment(input: {
         ok: false,
         genai: 0,
         deepfake: 0,
-        message: 'Unable to verify this file. Please try again.'
+        message: API_ERROR_MESSAGE
       };
     }
 
@@ -137,11 +158,15 @@ export async function verifyImageAttachment(input: {
     const failedDeepfake = deepfake > deepfakeThreshold;
 
     if (failedGenai || failedDeepfake) {
+      const message = prefixContextMessage(
+        input.contextLabel,
+        buildFailureMessage(genai, deepfake, genaiThreshold, deepfakeThreshold)
+      );
       return {
         ok: false,
         genai,
         deepfake,
-        message: buildFailureMessage(genai, deepfake, genaiThreshold, deepfakeThreshold)
+        message
       };
     }
 
@@ -149,14 +174,14 @@ export async function verifyImageAttachment(input: {
       ok: true,
       genai,
       deepfake,
-      message: 'Attachment verified successfully.'
+      message: PASS_MESSAGE
     };
   } catch {
     return {
       ok: false,
       genai: 0,
       deepfake: 0,
-      message: 'Unable to verify this file. Please try again.'
+      message: API_ERROR_MESSAGE
     };
   }
 }

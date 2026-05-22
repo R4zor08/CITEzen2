@@ -1,32 +1,73 @@
 import type { ConcernAttachment } from '../types.js';
 import {
-  isImageMimeType,
-  isSupportingDocumentsField,
+  getDisplayLabelForField,
+  isVerifiedAttachmentField,
   isVerifiedImageMimeType,
   MAX_ATTACHMENT_BYTES,
   normalizeVerificationMimeType,
-  parseDataUrl
+  parseDataUrl,
+  resolveFieldKeyFromApiName,
+  UNSUPPORTED_MIME_MESSAGE,
+  VERIFIED_API_FIELD_NAMES
 } from '../lib/attachmentVerification.js';
 import * as sightengineService from './sightengineService.js';
 
-const PDF_REJECTION_MESSAGE =
-  'PDF files cannot be verified for authenticity. Please upload PNG or JPG supporting documents.';
+export type AttachmentVerificationResponse = {
+  ok: boolean;
+  verified: boolean;
+  genai: number;
+  deepfake: number;
+  message: string;
+};
+
+function toVerificationResponse(
+  result: sightengineService.SightengineVerificationResult
+): AttachmentVerificationResponse {
+  return {
+    ok: result.ok,
+    verified: result.ok,
+    genai: result.genai,
+    deepfake: result.deepfake,
+    message: result.message
+  };
+}
 
 export async function verifyAttachmentPayload(body: {
+  fieldName: (typeof VERIFIED_API_FIELD_NAMES)[number];
   dataUrl: string;
   fileName: string;
   mimeType: string;
-}): Promise<sightengineService.SightengineVerificationResult> {
+}): Promise<AttachmentVerificationResponse> {
+  const fieldKey = resolveFieldKeyFromApiName(body.fieldName);
+  if (!fieldKey) {
+    return {
+      ok: false,
+      verified: false,
+      genai: 0,
+      deepfake: 0,
+      message: 'Invalid field for verification.'
+    };
+  }
+
+  const contextLabel = body.fieldName;
+
   if (!body.dataUrl?.trim()) {
-    return { ok: false, genai: 0, deepfake: 0, message: 'File data is required.' };
+    return {
+      ok: false,
+      verified: false,
+      genai: 0,
+      deepfake: 0,
+      message: 'File data is required.'
+    };
   }
 
   if (!isVerifiedImageMimeType(body.mimeType)) {
     return {
       ok: false,
+      verified: false,
       genai: 0,
       deepfake: 0,
-      message: 'Only PNG and JPG images can be verified for authenticity.'
+      message: UNSUPPORTED_MIME_MESSAGE
     };
   }
 
@@ -35,6 +76,7 @@ export async function verifyAttachmentPayload(body: {
     if (buffer.length > MAX_ATTACHMENT_BYTES) {
       return {
         ok: false,
+        verified: false,
         genai: 0,
         deepfake: 0,
         message: 'File exceeds maximum size of 10MB.'
@@ -42,15 +84,23 @@ export async function verifyAttachmentPayload(body: {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Invalid file data';
-    return { ok: false, genai: 0, deepfake: 0, message };
+    return {
+      ok: false,
+      verified: false,
+      genai: 0,
+      deepfake: 0,
+      message
+    };
   }
 
   const mimeType = normalizeVerificationMimeType(body.mimeType);
-  return sightengineService.verifyImageAttachment({
+  const result = await sightengineService.verifyImageAttachment({
     dataUrl: body.dataUrl,
     mimeType,
-    fileName: body.fileName
+    fileName: body.fileName,
+    contextLabel
   });
+  return toVerificationResponse(result);
 }
 
 export async function validateAttachmentsForCreate(
@@ -63,42 +113,33 @@ export async function validateAttachmentsForCreate(
       return { error: 'One or more attachments exceed the maximum size of 10MB.' };
     }
 
-    if (isSupportingDocumentsField(att.field)) {
-      if (att.mimeType === 'application/pdf') {
-        return { error: PDF_REJECTION_MESSAGE };
-      }
-      if (!isVerifiedImageMimeType(att.mimeType)) {
-        return {
-          error:
-            'Supporting documents must be PNG or JPG images so authenticity can be verified.'
-        };
-      }
-
-      const mimeType = normalizeVerificationMimeType(att.mimeType);
-      const result = await sightengineService.verifyImageAttachment({
-        dataUrl: att.dataUrl,
-        mimeType,
-        fileName: att.name
-      });
-      if (!result.ok) {
-        return { error: result.message };
-      }
+    if (!isVerifiedAttachmentField(att.field)) {
       continue;
     }
 
-    if (isImageMimeType(att.mimeType)) {
-      if (!isVerifiedImageMimeType(att.mimeType)) {
-        continue;
-      }
-      const mimeType = normalizeVerificationMimeType(att.mimeType);
-      const result = await sightengineService.verifyImageAttachment({
-        dataUrl: att.dataUrl,
-        mimeType,
-        fileName: att.name
-      });
-      if (!result.ok) {
-        return { error: result.message };
-      }
+    const contextLabel = getDisplayLabelForField(att.field) ?? att.field;
+
+    if (att.mimeType === 'application/pdf') {
+      return {
+        error: `${contextLabel} cannot be verified because PDF is not supported. Please upload PNG or JPG.`
+      };
+    }
+
+    if (!isVerifiedImageMimeType(att.mimeType)) {
+      return {
+        error: `${contextLabel} must be a PNG or JPG image. ${UNSUPPORTED_MIME_MESSAGE}`
+      };
+    }
+
+    const mimeType = normalizeVerificationMimeType(att.mimeType);
+    const result = await sightengineService.verifyImageAttachment({
+      dataUrl: att.dataUrl,
+      mimeType,
+      fileName: att.name,
+      contextLabel
+    });
+    if (!result.ok) {
+      return { error: result.message };
     }
   }
 

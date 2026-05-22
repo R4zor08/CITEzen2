@@ -44,7 +44,12 @@ export async function verifyAttachment(req: Request, res: Response, next: NextFu
       throw new ForbiddenError('Only students can verify concern attachments');
     }
 
-    const b = req.body as { dataUrl: string; fileName: string; mimeType: string };
+    const b = req.body as {
+      fieldName: 'Supporting Documents' | 'Affidavit of Loss' | 'Photo of Issue';
+      dataUrl: string;
+      fileName: string;
+      mimeType: string;
+    };
     const result = await concernAttachmentService.verifyAttachmentPayload(b);
     ok(res, result);
   } catch (e) {
