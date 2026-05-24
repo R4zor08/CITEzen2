@@ -526,37 +526,59 @@ export function ConcernDetail({
           />
 
             <motion.div
+            key="forward-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 z-[71] flex flex-col justify-end sm:justify-center sm:items-center sm:p-4 pointer-events-none">
+              <motion.div
             key="forward-sheet"
             role="dialog"
             aria-modal="true"
             aria-labelledby="forward-sheet-title"
             initial={
               isDesktopForward
-                ? { opacity: 0, scale: 0.94, y: 0 }
-                : { y: '105%', opacity: 1, scale: 1 }
+                ? { opacity: 0, scale: 0.96 }
+                : { y: '100%', opacity: 1 }
             }
             animate={
               isDesktopForward
-                ? { opacity: 1, scale: 1, y: 0 }
-                : { y: 0, opacity: 1, scale: 1 }
+                ? { opacity: 1, scale: 1 }
+                : { y: 0, opacity: 1 }
             }
             exit={
               isDesktopForward
-                ? { opacity: 0, scale: 0.94, y: 0 }
-                : { y: '105%', opacity: 1, scale: 1 }
+                ? { opacity: 0, scale: 0.96 }
+                : { y: '100%', opacity: 1 }
             }
             transition={
               isDesktopForward
                 ? { duration: 0.22, ease: [0.4, 0, 0.2, 1] }
                 : { type: 'spring', stiffness: 380, damping: 36 }
             }
-            className="absolute inset-x-0 bottom-0 z-[71] flex max-h-[min(88dvh,560px)] flex-col rounded-t-[1.35rem] border border-white/10 bg-[var(--bg-secondary)] shadow-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:w-[min(calc(100vw-2rem),24rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:max-h-[min(80vh,520px)] overflow-hidden">
+            className="pointer-events-auto flex w-full max-h-[min(88dvh,560px)] flex-col overflow-hidden rounded-t-[1.35rem] border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-2xl mx-3 sm:mx-0 sm:w-full sm:max-w-md sm:rounded-2xl sm:max-h-[min(80vh,520px)]">
             
-              <div className="flex items-center gap-3 p-4 sm:p-5 border-b border-white/10 bg-white/5 shrink-0 pt-[max(1rem,env(safe-area-inset-top,0px))] sm:pt-4">
+              <motion.div
+                drag="y"
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={0.12}
+                onDragEnd={(_, info) => {
+                  if (!isDesktopForward && info.offset.y > 80) {
+                    setShowForwardPanel(false);
+                  }
+                }}
+                className="flex shrink-0 justify-center pt-2 sm:hidden">
+                <span className="h-1 w-10 rounded-full bg-[var(--border-color)]" aria-hidden />
+              </motion.div>
+
+              <motion.div
+                drag={false}
+                className="flex items-center gap-3 p-4 sm:p-5 border-b border-[var(--border-color)] bg-[var(--glass-bg)] shrink-0 pt-[max(0.75rem,env(safe-area-inset-top,0px))] sm:pt-4">
                 <button
                 type="button"
                 onClick={() => setShowForwardPanel(false)}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 transition-colors touch-manipulation shrink-0"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)] transition-colors touch-manipulation shrink-0"
                 aria-label="Back">
                 
                   <ArrowLeftIcon className="h-5 w-5" />
@@ -564,25 +586,25 @@ export function ConcernDetail({
                 <div className="min-w-0 flex-1">
                   <h2
                   id="forward-sheet-title"
-                  className="text-base sm:text-lg font-semibold text-white leading-tight">
+                  className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">
                   
                     Forward concern
                   </h2>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
+                  <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5 truncate">
                     From: {concern.department}
                   </p>
                 </div>
                 <button
                 type="button"
                 onClick={() => setShowForwardPanel(false)}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-white/10 touch-manipulation sm:hidden"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)] touch-manipulation sm:hidden"
                 aria-label="Close">
                 
                   <XIcon className="h-5 w-5" />
                 </button>
-              </div>
+              </motion.div>
 
-              <p className="px-4 sm:px-5 pt-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+              <p className="px-4 sm:px-5 pt-3 text-xs font-medium uppercase tracking-wider text-[var(--text-muted)] shrink-0">
                 Select department
               </p>
 
@@ -598,21 +620,22 @@ export function ConcernDetail({
                   onForward(concern.id, dept);
                   setShowForwardPanel(false);
                 }}
-                className="w-full flex items-center gap-3 text-left min-h-[52px] px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-sm sm:text-base text-gray-200 hover:text-white hover:bg-purple-500/15 hover:border-purple-500/30 active:scale-[0.99] transition-all touch-manipulation shadow-sm">
+                className="w-full flex items-center gap-3 text-left min-h-[52px] px-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--glass-bg)] text-sm sm:text-base text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-purple-500/15 hover:border-purple-500/30 active:scale-[0.99] transition-all touch-manipulation shadow-sm">
                 
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
                       <BuildingIcon className="h-5 w-5" />
                     </span>
                     <span className="font-medium leading-snug flex-1">{dept}</span>
-                    <ArrowRightIcon className="h-4 w-4 text-gray-500 shrink-0" />
+                    <ArrowRightIcon className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
                   </motion.button>
               )}
                 {forwardTargets.length === 0 &&
-              <p className="text-center text-sm text-gray-500 py-8 px-4">
+              <p className="text-center text-sm text-[var(--text-muted)] py-8 px-4">
                   No other departments available.
                 </p>
               }
               </div>
+            </motion.div>
             </motion.div>
           </>
         }
