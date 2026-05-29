@@ -11,7 +11,7 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const input = path.join(
   root,
   'public',
-  'Gemini_Generated_Image_u7mgetu7mgetu7mg.png'
+  'citezen.png'
 );
 
 if (!fs.existsSync(input)) {

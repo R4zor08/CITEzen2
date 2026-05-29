@@ -29,7 +29,7 @@ export function Navbar({
             
             <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 group-hover:border-purple-500/50 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-purple-500/20">
               <img
-                src="/Gemini_Generated_Image_u7mgetu7mgetu7mg.png"
+                src="/citezen.png"
                 alt="CITEzen Logo"
                 className="h-10 w-10 object-cover rounded-full" />
               
@@ -173,7 +173,7 @@ export function Navbar({
             
             <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10">
               <img
-                src="/Gemini_Generated_Image_u7mgetu7mgetu7mg.png"
+                src="/citezen.png"
                 alt="Logo"
                 className="h-8 w-8 object-cover rounded-full" />
               

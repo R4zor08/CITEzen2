@@ -99,7 +99,7 @@ export function RegisterPage({ onRegister, onNavigate }: RegisterPageProps) {
           
           <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 group-hover:border-purple-500/50 transition-all duration-300 shadow-lg shadow-purple-500/10 group-hover:shadow-purple-500/30 group-hover:scale-105">
             <img
-              src="/Gemini_Generated_Image_u7mgetu7mgetu7mg.png"
+              src="/citezen.png"
               alt="CITEzen Logo"
               className="h-14 w-14 sm:h-16 sm:w-16 object-cover rounded-full" />
             

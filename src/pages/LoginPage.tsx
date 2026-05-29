@@ -55,7 +55,7 @@ export function LoginPage({ onLogin, onNavigate }: LoginPageProps) {
           
           <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 group-hover:border-purple-500/50 transition-all duration-300 shadow-xl shadow-purple-500/20 group-hover:shadow-purple-500/40 group-hover:scale-105">
             <img
-              src="/Gemini_Generated_Image_u7mgetu7mgetu7mg.png"
+              src="/citezen.png"
               alt="CITEzen Logo"
               className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-full" />
             

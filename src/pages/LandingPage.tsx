@@ -407,7 +407,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           <div className="flex flex-col items-center gap-4 sm:gap-6 mb-6 sm:mb-8 md:flex-row md:justify-between">
             <div className="flex items-center gap-3">
               <img
-                src="/Gemini_Generated_Image_u7mgetu7mgetu7mg.png"
+                src="/citezen.png"
                 alt="CITEzen Logo"
                 className="h-8 w-8 object-cover rounded-full border border-white/10" />
               

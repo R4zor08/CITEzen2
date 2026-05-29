@@ -50,7 +50,7 @@ interface ChatBubbleProps {
   /** Host fills the window (e.g. #gabai route); panel is always visible, no FAB. */
   isStandaloneWindow?: boolean;
 }
-const CITEZEN_LOGO = "/Gemini_Generated_Image_u7mgetu7mgetu7mg.png";
+const CITEZEN_LOGO = "/citezen.png";
 
 type ChatIntent = 'citezen' | 'campus' | 'general';
 
