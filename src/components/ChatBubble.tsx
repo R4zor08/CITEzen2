@@ -17,7 +17,6 @@ import {
   FileSpreadsheetIcon,
   PanelLeftIcon,
   PanelLeftCloseIcon,
-  PaperclipIcon,
   PencilIcon,
   AlertTriangleIcon,
   Copy as CopyIcon,
@@ -263,7 +262,6 @@ export function ChatBubble({
   } | null>(null);
   const [openMenuSessionId, setOpenMenuSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const historySearchRef = useRef<HTMLInputElement>(null);
   const scrollToBottom = () => {
@@ -1716,17 +1714,6 @@ export function ChatBubble({
                           </button>
                         </div>
                       }
-                      <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files.length > 0) {
-                          processFile(e.target.files[0]);
-                          e.target.value = '';
-                        }
-                      }}
-                      accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
                       <div
                       className="chat-composer-box flex items-end gap-1 min-h-[3rem] pl-4 pr-2 py-2"
                       title="Type a message. Drag and drop a file onto the chat to attach.">
@@ -1741,16 +1728,6 @@ export function ChatBubble({
                         rows={1}
                         disabled={isLoading || isStreaming || inlineEditIndex !== null} />
                         <div className="chat-composer-actions flex items-center gap-0.5 shrink-0 pb-0.5">
-                          <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isLoading || isStreaming || isProcessingFile || inlineEditIndex !== null}
-                        className="chat-composer-attach"
-                        title="Attach file"
-                        aria-label="Attach file">
-                        
-                            <PaperclipIcon className="h-5 w-5" />
-                          </button>
                           <button
                         type="button"
                         onClick={() => (isStreaming ? stopStreaming() : handleSend())}
