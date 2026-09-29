@@ -4,6 +4,10 @@ import {
   parseDataUrl,
   UNSUPPORTED_MIME_MESSAGE
 } from '../lib/attachmentVerification.js';
+import {
+  evaluateImageAuthenticityLocally,
+  type ImageAuthenticityResult
+} from './imageAuthenticityService.js';
 
 export type SightengineVerificationResult = {
   ok: boolean;
@@ -28,6 +32,13 @@ function getCredentials(): { apiUser: string; apiSecret: string } | null {
   const apiUser = process.env.SIGHTENGINE_API_USER?.trim();
   const apiSecret = process.env.SIGHTENGINE_API_SECRET?.trim();
   if (!apiUser || !apiSecret) return null;
+  if (
+    apiUser.includes('your_api_user') ||
+    apiSecret.includes('your_api_secret') ||
+    apiUser === 'your_api_user_number_here'
+  ) {
+    return null;
+  }
   return { apiUser, apiSecret };
 }
 
@@ -74,16 +85,6 @@ export async function verifyImageAttachment(input: {
   fileName?: string;
   contextLabel?: string;
 }): Promise<SightengineVerificationResult> {
-  const credentials = getCredentials();
-  if (!credentials) {
-    return {
-      ok: false,
-      genai: 0,
-      deepfake: 0,
-      message: 'Image verification is not configured. Please contact support.'
-    };
-  }
-
   if (!isVerifiedImageMimeType(input.mimeType)) {
     return {
       ok: false,
@@ -126,62 +127,125 @@ export async function verifyImageAttachment(input: {
   const deepfakeThreshold = readThreshold('SIGHTENGINE_DEEPFAKE_THRESHOLD', 0.5);
   const fileName = input.fileName?.trim() || 'attachment.jpg';
 
-  try {
-    const form = new FormData();
-    form.append(
-      'media',
-      new Blob([new Uint8Array(buffer)], { type: input.mimeType }),
-      fileName
+  // Always run local authenticity inspection first (deep metadata & provenance)
+  const localAnalysis: ImageAuthenticityResult = evaluateImageAuthenticityLocally(
+    buffer,
+    input.mimeType,
+    fileName
+  );
+
+  // If local analysis finds definitive AI generation signatures (e.g. Stable Diffusion parameters, ComfyUI, Midjourney tags):
+  if (localAnalysis.hasAiSignatures || localAnalysis.method === 'ai_metadata') {
+    const message = prefixContextMessage(
+      input.contextLabel,
+      buildFailureMessage(
+        localAnalysis.genai,
+        localAnalysis.deepfake,
+        genaiThreshold,
+        deepfakeThreshold
+      )
     );
-    form.append('models', 'genai,deepfake');
-    form.append('api_user', credentials.apiUser);
-    form.append('api_secret', credentials.apiSecret);
-
-    const res = await fetch(SIGHTENGINE_CHECK_URL, {
-      method: 'POST',
-      body: form
-    });
-
-    const body = (await res.json()) as Record<string, unknown>;
-
-    if (!res.ok || body.status !== 'success') {
-      return {
-        ok: false,
-        genai: 0,
-        deepfake: 0,
-        message: API_ERROR_MESSAGE
-      };
-    }
-
-    const { genai, deepfake } = extractScores(body);
-    const failedGenai = genai > genaiThreshold;
-    const failedDeepfake = deepfake > deepfakeThreshold;
-
-    if (failedGenai || failedDeepfake) {
-      const message = prefixContextMessage(
-        input.contextLabel,
-        buildFailureMessage(genai, deepfake, genaiThreshold, deepfakeThreshold)
-      );
-      return {
-        ok: false,
-        genai,
-        deepfake,
-        message
-      };
-    }
-
-    return {
-      ok: true,
-      genai,
-      deepfake,
-      message: PASS_MESSAGE
-    };
-  } catch {
     return {
       ok: false,
-      genai: 0,
-      deepfake: 0,
-      message: API_ERROR_MESSAGE
+      genai: localAnalysis.genai,
+      deepfake: localAnalysis.deepfake,
+      message
     };
   }
+
+  // Attempt external Sightengine verification if credentials are configured
+  const credentials = getCredentials();
+  if (credentials) {
+    try {
+      const form = new FormData();
+      form.append(
+        'media',
+        new Blob([new Uint8Array(buffer)], { type: input.mimeType }),
+        fileName
+      );
+      form.append('models', 'genai,deepfake');
+      form.append('api_user', credentials.apiUser);
+      form.append('api_secret', credentials.apiSecret);
+
+      const res = await fetch(SIGHTENGINE_CHECK_URL, {
+        method: 'POST',
+        body: form
+      });
+
+      const body = (await res.json()) as Record<string, unknown>;
+
+      if (res.ok && body.status === 'success') {
+        const { genai, deepfake } = extractScores(body);
+        const failedGenai = genai > genaiThreshold;
+        const failedDeepfake = deepfake > deepfakeThreshold;
+
+        // If Sightengine flags it as AI:
+        if (failedGenai || failedDeepfake) {
+          // Safeguard: If local analysis verified it as an authentic document/screenshot and Sightengine score is borderline:
+          if (
+            localAnalysis.isReal &&
+            (localAnalysis.method === 'document_screenshot' ||
+              localAnalysis.method === 'exif_hardware') &&
+            genai < 0.8
+          ) {
+            // Authentic student document / screenshot — favor authentic provenance
+            return {
+              ok: true,
+              genai: localAnalysis.genai,
+              deepfake: localAnalysis.deepfake,
+              message: PASS_MESSAGE
+            };
+          }
+
+          const message = prefixContextMessage(
+            input.contextLabel,
+            buildFailureMessage(genai, deepfake, genaiThreshold, deepfakeThreshold)
+          );
+          return {
+            ok: false,
+            genai,
+            deepfake,
+            message
+          };
+        }
+
+        return {
+          ok: true,
+          genai,
+          deepfake,
+          message: PASS_MESSAGE
+        };
+      }
+      // If Sightengine API call was not successful (e.g. rate limit, 401, quota),
+      // we fall through to the local analysis result below.
+    } catch {
+      // Fall through to local analysis
+    }
+  }
+
+  // When Sightengine is not configured or unavailable, rely on local authenticity analysis
+  if (!localAnalysis.ok) {
+    const message = prefixContextMessage(
+      input.contextLabel,
+      buildFailureMessage(
+        localAnalysis.genai,
+        localAnalysis.deepfake,
+        genaiThreshold,
+        deepfakeThreshold
+      )
+    );
+    return {
+      ok: false,
+      genai: localAnalysis.genai,
+      deepfake: localAnalysis.deepfake,
+      message
+    };
+  }
+
+  return {
+    ok: true,
+    genai: localAnalysis.genai,
+    deepfake: localAnalysis.deepfake,
+    message: PASS_MESSAGE
+  };
 }
