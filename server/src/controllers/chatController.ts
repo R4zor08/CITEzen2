@@ -285,10 +285,18 @@ export async function streamChat(req: Request, res: ExpressResponse) {
       return;
     }
 
-    const model =
+    const requestedModel =
       typeof (readJsonBody(req) as ChatBody)?.model === 'string'
         ? String((readJsonBody(req) as ChatBody).model)
-        : 'llama-3.3-70b-versatile';
+        : undefined;
+
+    const defaultModel = process.env.GROQ_CHAT_MODEL?.trim() || 'openai/gpt-oss-20b';
+
+    // Map outdated / unavailable Groq model names to the active configured model
+    const model =
+      !requestedModel || requestedModel === 'llama-3.3-70b-versatile'
+        ? defaultModel
+        : requestedModel;
 
     if (!stream) {
       const upstream = await requestGroq({
