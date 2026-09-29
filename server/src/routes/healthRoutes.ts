@@ -4,6 +4,7 @@ import * as controller from '../controllers/healthController.js';
 export function healthRoutes() {
   const router = Router();
   router.get('/health', controller.health);
+  router.get('/api/health', controller.health);
   return router;
 }
 
