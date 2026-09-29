@@ -26,4 +26,15 @@ dist-ssr
 *.sln
 *.sw?
 
-# Server - MongoDB (keep env local-only)
+# Server - MongoDB (keep env and local data local-only)
+.mongo-data/
+server/.mongo-data/
+server/.env
+server/.env.*
+!server/.env.example
+
+# Playwright Test Artifacts
+playwright-report/
+test-results/
+
+
