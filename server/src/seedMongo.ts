@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import { connectMongo } from './db/mongo.js';
+import { closeMongo, connectMongo } from './db/mongo.js';
 import { UserModel } from './models/UserModel.js';
 
 dotenv.config();
@@ -28,6 +28,44 @@ async function main() {
 
   console.log('Seeded admin user (Mongo): admin@nemsu.edu.ph');
 
+  // Create or update default student user for testing and demo
+  const studentHash = await bcrypt.hash('StudentPass123!', 10);
+  await UserModel.updateOne(
+    { studentId: '2024-0001' },
+    {
+      $set: {
+        studentId: '2024-0001',
+        email: '2024-0001@student.local',
+        name: 'Juan Dela Cruz',
+        passwordHash: studentHash,
+        role: 'student',
+        course: 'BSIT',
+        department: 'CITE'
+      }
+    },
+    { upsert: true }
+  );
+
+  console.log('Seeded student user (Mongo): 2024-0001');
+
+  // Create or update default staff user for testing and demo
+  const staffHash = await bcrypt.hash('StaffPass123!', 10);
+  await UserModel.updateOne(
+    { email: 'staff@nemsu.edu.ph' },
+    {
+      $set: {
+        email: 'staff@nemsu.edu.ph',
+        name: 'Maria Santos',
+        passwordHash: staffHash,
+        role: 'staff',
+        department: 'CITE'
+      }
+    },
+    { upsert: true }
+  );
+
+  console.log('Seeded staff user (Mongo): staff@nemsu.edu.ph');
+
   // Legacy registrations stored studentId: null for staff/admin; MongoDB unique sparse indexes still
   // index null and block additional staff. Remove the field so only students carry studentId.
   const unset = await UserModel.updateMany(
@@ -45,6 +83,6 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    // mongoose will close automatically on exit
+    await closeMongo();
   });
 

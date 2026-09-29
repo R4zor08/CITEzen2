@@ -12,9 +12,21 @@ if (!process.env.JWT_SECRET?.trim()) {
 const PORT = Number(process.env.PORT) || 3001;
 const app = createApp();
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`citezen API listening on http://localhost:${PORT}`);
 });
+
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n[citezen-server] Error: Port ${PORT} is already in use by another running process.`);
+    console.error(`[citezen-server] To free the port, stop the other terminal or run: npx kill-port ${PORT}\n`);
+    process.exit(1);
+  } else {
+    console.error('[citezen-server] Server error:', err);
+    process.exit(1);
+  }
+});
+
 
 const MONGO_RETRY_MS = Number(process.env.MONGO_RETRY_MS) || 10_000;
 let mongoConnecting = false;
