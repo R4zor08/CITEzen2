@@ -536,7 +536,7 @@ export function ChatBubble({
             },
             signal: controller.signal,
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile',
+              model: 'openai/gpt-oss-20b',
               messages: payloadMessages,
               temperature: 0.5,
               max_tokens: 768,
@@ -621,7 +621,7 @@ export function ChatBubble({
             },
             signal: controller.signal,
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile',
+              model: 'openai/gpt-oss-20b',
               messages: payloadMessages,
               temperature: 0.5,
               max_tokens: 768,

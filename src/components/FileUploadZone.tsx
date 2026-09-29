@@ -66,11 +66,33 @@ function classifyRejectionKind(
   if (lower.includes('manipulated') || lower.includes('deepfake')) {
     return 'manipulated';
   }
-  if (lower.includes('ai-generated') || lower.includes('ai generated')) {
+  if (
+    lower.includes('ai-generated') ||
+    lower.includes('ai generated') ||
+    genai >= 0.4
+  ) {
     return 'ai_generated';
+  }
+  if (
+    lower.includes('unsupported') ||
+    lower.includes('not supported') ||
+    lower.includes('not accepted') ||
+    lower.includes('only png') ||
+    lower.includes('pdf')
+  ) {
+    return 'unsupported';
+  }
+  if (
+    lower.includes('unable to verify') ||
+    lower.includes('not configured') ||
+    lower.includes('contact support') ||
+    lower.includes('try again')
+  ) {
+    return 'error';
   }
   if (genai > deepfake && genai > 0) return 'ai_generated';
   if (deepfake > genai && deepfake > 0) return 'manipulated';
+  if (genai === 0 && deepfake === 0) return 'error';
   return 'ai_generated';
 }
 
