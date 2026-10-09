@@ -110,7 +110,7 @@ export function StatCard({
               ) : (
                 <TrendingDownIcon className="h-3 w-3 mr-0.5 sm:mr-1 shrink-0" />
               )}
-              <span>{trend.value}% vs last month</span>
+              <span>{trend.value}%<span className="hidden sm:inline"> vs last month</span></span>
             </div>
           )}
         </div>

@@ -24,7 +24,7 @@ export function AnalyticsChart({ data, type, title }: AnalyticsChartProps) {
     <div className="glass-panel p-6 h-full flex flex-col">
       <h3 className="text-base font-semibold text-white mb-6">{title}</h3>
 
-      <div className="flex-1 flex items-end justify-center gap-2 sm:gap-4 min-h-[200px] mt-auto">
+      <div className="flex-1 flex items-end justify-center gap-1.5 sm:gap-4 min-h-[200px] mt-auto overflow-x-auto custom-scrollbar pb-1 max-w-full">
         {type === 'bar' &&
         data.map((item, index) => {
           const height = maxVal > 0 ? `${item.value / maxVal * 100}%` : '0%';

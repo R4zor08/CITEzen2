@@ -31,7 +31,7 @@ export function AddDepartmentModal({
   };
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark-900/80 backdrop-blur-sm animate-fade-in">
-      <div className="glass-panel w-full max-w-md flex flex-col overflow-hidden animate-slide-up shadow-2xl shadow-sky-500/10">
+      <div className="glass-panel w-full max-w-md rounded-2xl flex flex-col overflow-hidden animate-slide-up shadow-2xl shadow-sky-500/10">
         <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400">
