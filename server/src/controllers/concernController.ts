@@ -31,6 +31,12 @@ export async function getConcern(req: Request, res: Response, next: NextFunction
   try {
     const c = await concernService.getConcern(req.params.id);
     if (!c) throw new NotFoundError('Concern not found');
+    if (req.user?.role === 'student' && c.studentId !== req.user.id) {
+      throw new ForbiddenError('You can only view your own concerns');
+    }
+    if (req.user?.role === 'staff' && c.adminReviewStatus === 'pending') {
+      throw new ForbiddenError('Concern is awaiting admin review and confirmation');
+    }
     ok(res, concernToApi(c));
   } catch (e) {
     next(e);
@@ -92,6 +98,7 @@ export async function createConcern(req: Request, res: Response, next: NextFunct
 
 export async function updateConcern(req: Request, res: Response, next: NextFunction) {
   try {
+    if (!req.user) throw new ForbiddenError('Authentication required');
     const concernId = req.params.id;
     if (!concernId) throw new BadRequestError('concern id is required');
     const b = req.body as Partial<{
@@ -101,10 +108,53 @@ export async function updateConcern(req: Request, res: Response, next: NextFunct
       department: string;
     }>;
 
+    // Staff cannot modify assignments or reassign departments; only admin can
+    if (req.user.role !== 'admin' && (b.assignedTo !== undefined || b.department !== undefined)) {
+      throw new ForbiddenError('Only administrators can modify concern assignments or departments');
+    }
+
     const r = await concernService.updateConcern(concernId, b as any);
     if ('notFound' in r) {
       throw new NotFoundError('Concern not found');
     }
+    ok(res, concernToApi(r.concern));
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function confirmConcern(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new ForbiddenError('Authentication required');
+    if (req.user.role !== 'admin') {
+      throw new ForbiddenError('Only administrators can confirm concern classification and assignments');
+    }
+    const concernId = req.params.id;
+    if (!concernId) throw new BadRequestError('Concern id is required');
+
+    const b = req.body as {
+      assignedToId: string;
+      department?: string;
+      category?: string;
+      subcategory?: string;
+    };
+
+    const r = await concernService.confirmConcern({
+      id: concernId,
+      adminId: req.user.id,
+      assignedToId: b.assignedToId,
+      department: b.department,
+      category: b.category,
+      subcategory: b.subcategory
+    });
+
+    if ('notFound' in r) {
+      throw new NotFoundError('Concern not found');
+    }
+    if ('error' in r) {
+      throw new BadRequestError(String(r.error));
+    }
+
     ok(res, concernToApi(r.concern));
   } catch (e) {
     next(e);
