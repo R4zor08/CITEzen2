@@ -40,6 +40,19 @@ export interface ConcernAttachment {
   verified?: boolean;
 }
 
+export interface AIClassification {
+  concernCategory: string;
+  category?: string;
+  subcategory?: string;
+  department: string;
+  priority?: Priority;
+  concernSummary?: string;
+  suggestedStaffId?: string;
+  suggestedStaffName?: string;
+  confidence?: number;
+  reasoning?: string;
+}
+
 export interface Concern {
   id: string;
   title: string;
@@ -57,6 +70,11 @@ export interface Concern {
   attachments?: ConcernAttachment[];
   comments: Comment[];
   formData?: Record<string, any>;
+  aiClassification?: AIClassification;
+  suggestedStaffId?: string;
+  suggestedStaffName?: string;
+  adminReviewStatus?: 'pending' | 'confirmed' | 'reassigned';
+  isConfirmed?: boolean;
 }
 
 export interface TemplateField {
