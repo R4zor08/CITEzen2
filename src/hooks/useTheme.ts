@@ -9,15 +9,25 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'dark',
+  theme: 'light',
   toggleTheme: () => undefined,
-  isDark: true
+  isDark: false
 });
 
 export function useThemeProvider() {
   const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem('citezen_theme');
-    return stored as Theme || 'dark';
+    try {
+      const userExplicitlySet = localStorage.getItem('citezen_theme_user_set') === 'true';
+      if (userExplicitlySet) {
+        const stored = localStorage.getItem('citezen_theme');
+        if (stored === 'dark' || stored === 'light') {
+          return stored;
+        }
+      }
+      return 'light';
+    } catch {
+      return 'light';
+    }
   });
 
   useEffect(() => {
@@ -29,11 +39,20 @@ export function useThemeProvider() {
       root.classList.add('light');
       root.classList.remove('dark');
     }
-    localStorage.setItem('citezen_theme', theme);
+    try {
+      localStorage.setItem('citezen_theme', theme);
+    } catch {}
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => prev === 'dark' ? 'light' : 'dark');
+    setTheme((prev) => {
+      const next: Theme = prev === 'dark' ? 'light' : 'dark';
+      try {
+        localStorage.setItem('citezen_theme', next);
+        localStorage.setItem('citezen_theme_user_set', 'true');
+      } catch {}
+      return next;
+    });
   };
 
   return { theme, toggleTheme, isDark: theme === 'dark' };
