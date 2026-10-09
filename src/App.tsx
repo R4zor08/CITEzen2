@@ -79,14 +79,13 @@ export function App() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center text-white">
-        <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 mb-6 animate-pulse">
+        <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10 mb-6 animate-pulse">
           <img
-            src="/citezen.png"
+            src="/citezen.png?v=2"
             alt="CITEzen Logo"
             className="h-20 w-20 object-cover rounded-full" />
-          
         </div>
-        <Loader2Icon className="h-8 w-8 text-purple-500 animate-spin" />
+        <Loader2Icon className="h-8 w-8 text-sky-400 animate-spin" />
         <p className="mt-4 text-gray-400 font-medium tracking-widest uppercase text-sm">
           Loading CITEzen...
         </p>
