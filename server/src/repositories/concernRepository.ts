@@ -26,8 +26,32 @@ async function withComments(concernDoc: any) {
 }
 
 export async function listConcerns(where: any) {
-  const concerns = await ConcernModel.find(where).sort({ updatedAt: -1 }).exec();
-  return Promise.all(concerns.map(withComments));
+  const rawConcerns = await ConcernModel.find(where)
+    .sort({ updatedAt: -1 })
+    .limit(100)
+    .lean()
+    .exec();
+  const plainConcerns = rawConcerns.map((c) => docToPlain<any>(c)).filter(Boolean);
+  if (plainConcerns.length === 0) return [];
+
+  const concernIds = plainConcerns.map((c) => String(c.id ?? c._id));
+  const rawComments = await CommentModel.find({ concernId: { $in: concernIds } })
+    .sort({ createdAt: 1 })
+    .lean()
+    .exec();
+
+  const commentsByConcernId = new Map<string, any[]>();
+  for (const c of rawComments) {
+    const plainComment = docToPlain<any>(c);
+    const list = commentsByConcernId.get(c.concernId) ?? [];
+    list.push(plainComment);
+    commentsByConcernId.set(c.concernId, list);
+  }
+
+  return plainConcerns.map((c) => ({
+    ...c,
+    comments: commentsByConcernId.get(String(c.id ?? c._id)) ?? []
+  }));
 }
 
 export async function getConcernById(id: string) {
