@@ -49,7 +49,7 @@ interface ChatBubbleProps {
   /** Host fills the window (e.g. #gabai route); panel is always visible, no FAB. */
   isStandaloneWindow?: boolean;
 }
-const CITEZEN_LOGO = "/citezen.png";
+const CITEZEN_LOGO = "/citezen.png?v=2";
 
 type ChatIntent = 'citezen' | 'campus' | 'general';
 
@@ -1003,8 +1003,8 @@ export function ChatBubble({
           }}
           className={
             isStandaloneWindow
-              ? 'h-full w-full min-h-0 max-h-full z-50 glass-panel flex flex-col overflow-hidden shadow-2xl shadow-purple-500/20 border-purple-500/30 rounded-none'
-              : 'fixed inset-0 z-[60] h-[100dvh] min-h-[100dvh] w-full max-w-none glass-panel flex flex-col overflow-hidden shadow-2xl shadow-purple-500/20 border-white/10 rounded-none pt-[env(safe-area-inset-top,0px)] isolate'
+              ? 'gabai-chat h-full w-full min-h-0 max-h-full z-50 glass-panel flex flex-col overflow-hidden shadow-2xl shadow-sky-500/20 border-sky-500/30 rounded-none'
+              : 'gabai-chat fixed inset-0 z-[60] h-[100dvh] min-h-[100dvh] w-full max-w-none glass-panel flex flex-col overflow-hidden shadow-2xl shadow-sky-500/20 border-white/10 rounded-none pt-[env(safe-area-inset-top,0px)] isolate'
           }>
           
             {/* Confirmation Modal */}
@@ -1020,7 +1020,7 @@ export function ChatBubble({
               exit={{
                 opacity: 0
               }}
-              className="absolute inset-0 z-50 bg-dark-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+              className="gabai-confirm-overlay absolute inset-0 z-50 bg-dark-900/80 backdrop-blur-sm flex items-center justify-center p-4">
               
                   <motion.div
                 initial={{
@@ -1035,7 +1035,7 @@ export function ChatBubble({
                   scale: 0.9,
                   opacity: 0
                 }}
-                className="bg-dark-800 border border-white/10 rounded-xl p-5 w-full max-w-[280px] shadow-2xl text-center">
+                className="gabai-confirm bg-dark-800 border border-white/10 rounded-xl p-5 w-full max-w-[280px] shadow-2xl text-center">
                 
                     <AlertTriangleIcon className="h-10 w-10 text-red-400 mx-auto mb-3" />
                     <h4 className="text-white font-bold mb-2">Are you sure?</h4>
@@ -1047,7 +1047,7 @@ export function ChatBubble({
                     <div className="flex gap-3">
                       <button
                     onClick={() => setConfirmAction(null)}
-                    className="flex-1 py-2.5 rounded-lg bg-white/5 text-white hover:bg-white/10 transition-colors text-sm font-medium">
+                    className="gabai-confirm-cancel flex-1 py-2.5 rounded-lg bg-white/5 text-white hover:bg-white/10 transition-colors text-sm font-medium">
                     
                         Cancel
                       </button>
@@ -1072,7 +1072,7 @@ export function ChatBubble({
                   width: isSidebarOpen ? 260 : 0
                 }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className={`hidden md:flex flex-col shrink-0 bg-dark-900 min-h-0 overflow-hidden border-r border-white/10 ${isSidebarOpen ? '' : 'border-r-0'}`}>
+                className={`gabai-sidebar hidden md:flex flex-col shrink-0 bg-dark-900 min-h-0 overflow-hidden border-r border-white/10 ${isSidebarOpen ? '' : 'border-r-0'}`}>
                 <div className="flex flex-col w-[260px] min-h-0 h-full">
                   <ChatHistorySidebar {...historySidebarProps} />
                 </div>
@@ -1093,7 +1093,7 @@ export function ChatBubble({
                       animate={{ x: 0 }}
                       exit={{ x: '-100%' }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className="fixed inset-y-0 left-0 z-50 w-[min(100vw,320px)] flex flex-col bg-dark-900 border-r border-white/10 md:hidden pt-[env(safe-area-inset-top,0px)]"
+                      className="gabai-sidebar fixed inset-y-0 left-0 z-50 w-[min(100vw,320px)] flex flex-col bg-dark-900 border-r border-white/10 md:hidden pt-[env(safe-area-inset-top,0px)]"
                     >
                       <ChatHistorySidebar
                         {...historySidebarProps}
@@ -1105,16 +1105,16 @@ export function ChatBubble({
                 )}
               </AnimatePresence>
 
-              <main className="flex flex-1 flex-col min-w-0 min-h-0 bg-dark-900/50">
+              <main className="gabai-main flex flex-1 flex-col min-w-0 min-h-0 bg-dark-900/50">
 
                 
                     {/* Chat Header */}
-                    <div className="flex items-center justify-between p-3 border-b border-white/10 bg-dark-800/80 backdrop-blur-md shrink-0">
+                    <div className="gabai-header flex items-center justify-between p-3 border-b border-white/10 bg-dark-800/80 backdrop-blur-md shrink-0">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <button
                       type="button"
                       onClick={() => setIsSidebarOpen((v) => !v)}
-                      className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      className="gabai-icon-btn p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
                       aria-label={isSidebarOpen ? 'Close sidebar' : 'Open chats'}
                       title={isSidebarOpen ? 'Close sidebar' : 'Open chats'}>
                       {isSidebarOpen ?
@@ -1127,15 +1127,13 @@ export function ChatBubble({
                           whileHover={{
                             scale: 1.05
                           }}
-                          className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 shadow-[0_0_10px_rgba(168,85,247,0.3)]">
-                          
+                          className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10 shadow-[0_0_10px_rgba(14,165,233,0.3)]">
                               <img
                             src={CITEZEN_LOGO}
                             alt="GabAI"
                             className="h-8 w-8 object-cover rounded-full" />
-                          
                             </motion.div>
-                            <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-dark-800" />
+                            <div className="gabai-online-dot absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-dark-800" />
                           </div>
                           <div className="min-w-0 flex flex-col">
                             <h3 className="text-sm font-bold text-white truncate leading-tight">
@@ -1157,7 +1155,7 @@ export function ChatBubble({
                         <button
                       type="button"
                       onClick={() => setOpen(false)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+                      className="gabai-icon-btn p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
                       aria-label="Close chat">
                       
                           <XIcon className="h-5 w-5" />
@@ -1185,7 +1183,7 @@ export function ChatBubble({
                       exit={{
                         opacity: 0
                       }}
-                      className="absolute inset-0 z-10 bg-purple-500/10 backdrop-blur-sm border-2 border-dashed border-purple-500/50 rounded-xl m-2 flex flex-col items-center justify-center text-purple-400">
+                      className="gabai-drag-overlay absolute inset-0 z-10 bg-purple-500/10 backdrop-blur-sm border-2 border-dashed border-purple-500/50 rounded-xl m-2 flex flex-col items-center justify-center text-purple-400">
                       
                             <UploadCloudIcon className="h-12 w-12 mb-2 animate-bounce" />
                             <p className="font-medium">
@@ -1222,12 +1220,11 @@ export function ChatBubble({
                         className={`group/msg flex w-full items-start gap-2 sm:gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         
                             {msg.role === 'assistant' &&
-                        <div className="relative mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10">
+                        <div className="relative mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10">
                                 <img
                             src={CITEZEN_LOGO}
                             alt="GabAI"
                             className="h-8 w-8 object-cover rounded-full" />
-                          
                               </div>
                         }
 
@@ -1344,7 +1341,7 @@ export function ChatBubble({
                                 msg.content
                               )
                               }
-                              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:bg-white/5 hover:text-gray-200">
+                              className="gabai-action inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:bg-white/5 hover:text-gray-200">
                               
                                     <CopyIcon className="h-3.5 w-3.5" />
                                     Copy
@@ -1359,7 +1356,7 @@ export function ChatBubble({
                                     setInlineEditIndex(index);
                                     setInlineEditDraft(msg.content);
                                   }}
-                                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:bg-white/5 hover:text-gray-200">
+                                  className="gabai-action inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:bg-white/5 hover:text-gray-200">
                                   
                                         <PencilIcon className="h-3.5 w-3.5" />
                                         Edit
@@ -1368,7 +1365,7 @@ export function ChatBubble({
                                   type="button"
                                   onClick={() => void resendUserMessageAt(index)}
                                   disabled={isLoading || isStreaming}
-                                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:bg-white/5 hover:text-gray-200 disabled:opacity-40">
+                                  className="gabai-action inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:bg-white/5 hover:text-gray-200 disabled:opacity-40">
                                   
                                         <RefreshCwIcon className="h-3.5 w-3.5" />
                                         Resend
@@ -1381,7 +1378,7 @@ export function ChatBubble({
                                 type="button"
                                 onClick={() => void regenerateAssistantAt(index)}
                                 disabled={isLoading || isStreaming}
-                                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:bg-white/5 hover:text-gray-200 disabled:opacity-40">
+                                className="gabai-action inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:bg-white/5 hover:text-gray-200 disabled:opacity-40">
                                 
                                     <RefreshCwIcon className="h-3.5 w-3.5" />
                                     Regenerate
@@ -1401,15 +1398,12 @@ export function ChatBubble({
                               index
                             )
                             }
-                            className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center border border-purple-500/50 shadow-sm overflow-hidden focus:outline-none focus:ring-2 focus:ring-purple-500/50">
-                            
+                            className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-sky-600 flex items-center justify-center border border-sky-500/50 shadow-sm overflow-hidden focus:outline-none focus:ring-2 focus:ring-sky-500/50">
                                   {user.profilePicture ?
                             <img
                               src={user.profilePicture}
                               alt={user.name}
                               className="h-full w-full object-cover" /> :
-
-
                             <span className="text-xs font-bold text-white">
                                       {user.name.charAt(0).toUpperCase()}
                                     </span>
@@ -1441,7 +1435,7 @@ export function ChatBubble({
                                   scale: 0.9,
                                   y: 10
                                 }}
-                                className="absolute bottom-full right-0 mb-2 z-50 w-48 bg-dark-800 border border-white/10 rounded-xl shadow-xl overflow-hidden">
+                                className="gabai-popover absolute bottom-full right-0 mb-2 z-50 w-48 bg-dark-800 border border-white/10 rounded-xl shadow-xl overflow-hidden">
                                 
                                         <div className="p-3 border-b border-white/5">
                                           <p className="text-sm font-bold text-white truncate">
@@ -1518,12 +1512,11 @@ export function ChatBubble({
 
                       {isLoading &&
                   <div className="flex items-end gap-2 justify-start">
-                          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 shrink-0 mb-1">
+                          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10 shrink-0 mb-1">
                             <img
                         src={CITEZEN_LOGO}
                         alt="GabAI"
                         className="h-8 w-8 object-cover rounded-full" />
-                      
                           </div>
                           <div className="chat-bubble-assistant rounded-2xl rounded-bl-sm px-4 py-3 shadow-md">
                             <div className="flex gap-1">
@@ -1536,8 +1529,7 @@ export function ChatBubble({
                             repeat: Infinity,
                             delay: 0
                           }}
-                          className="h-1.5 w-1.5 rounded-full bg-purple-400" />
-                        
+                          className="h-1.5 w-1.5 rounded-full bg-sky-400" />
                               <motion.div
                           animate={{
                             y: [0, -5, 0]
@@ -1547,8 +1539,7 @@ export function ChatBubble({
                             repeat: Infinity,
                             delay: 0.2
                           }}
-                          className="h-1.5 w-1.5 rounded-full bg-purple-400" />
-                        
+                          className="h-1.5 w-1.5 rounded-full bg-sky-400" />
                               <motion.div
                           animate={{
                             y: [0, -5, 0]
@@ -1558,8 +1549,7 @@ export function ChatBubble({
                             repeat: Infinity,
                             delay: 0.4
                           }}
-                          className="h-1.5 w-1.5 rounded-full bg-purple-400" />
-                        
+                          className="h-1.5 w-1.5 rounded-full bg-sky-400" />
                             </div>
                           </div>
                         </div>
@@ -1583,17 +1573,16 @@ export function ChatBubble({
                     }}
                     className="flex items-end gap-2 justify-start">
                     
-                          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 shrink-0 mb-1">
+                          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10 shrink-0 mb-1">
                             <img
                         src={CITEZEN_LOGO}
                         alt="GabAI"
                         className="h-8 w-8 object-cover rounded-full" />
-                      
                           </div>
                           <div className="chat-bubble-assistant max-w-[85%] rounded-2xl px-4 py-2.5 text-sm rounded-bl-sm shadow-md">
                             <p className="whitespace-pre-wrap leading-relaxed">
                               {streamingContent}
-                              <span className="inline-block w-1.5 h-4 bg-purple-400 rounded-sm ml-0.5 animate-pulse align-middle" />
+                              <span className="inline-block w-1.5 h-4 bg-sky-400 rounded-sm ml-0.5 animate-pulse align-middle" />
                             </p>
                           </div>
                         </motion.div>
@@ -1623,10 +1612,10 @@ export function ChatBubble({
                     }}
                     className="mb-2">
                     
-                          <div className="bg-dark-900 border border-white/10 rounded-xl p-2 flex items-center gap-3 relative overflow-hidden">
+                          <div className="gabai-preview bg-dark-900 border border-white/10 rounded-xl p-2 flex items-center gap-3 relative overflow-hidden">
                             {isProcessingFile ?
                       <>
-                                <div className="h-10 w-10 rounded-lg bg-dark-800 flex items-center justify-center border border-white/5">
+                                <div className="gabai-preview-icon h-10 w-10 rounded-lg bg-dark-800 flex items-center justify-center border border-white/5">
                                   <Loader2Icon className="h-5 w-5 text-purple-400 animate-spin" />
                                 </div>
                                 <div className="flex-1">
@@ -1658,7 +1647,7 @@ export function ChatBubble({
                           className="h-10 w-10 rounded-lg object-cover border border-white/10" /> :
 
 
-                        <div className="h-10 w-10 rounded-lg bg-dark-800 border border-white/10 flex items-center justify-center text-purple-400">
+                        <div className="gabai-preview-icon h-10 w-10 rounded-lg bg-dark-800 border border-white/10 flex items-center justify-center text-purple-400">
                                     {stagedAttachment.mimeType.includes(
                             'pdf'
                           ) ||
@@ -1698,7 +1687,7 @@ export function ChatBubble({
 
                     {/* Input Area */}
                       {inlineEditIndex !== null &&
-                      <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-200">
+                      <div className="gabai-edit-banner mb-2 flex items-center justify-between gap-2 rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-200">
                           <span className="truncate">
                             Editing a message above. Save or cancel in the chat bubble.
                           </span>
@@ -1750,7 +1739,7 @@ export function ChatBubble({
                         </div>
                       </div>
                       {isStreaming &&
-                      <div className="mt-1.5 text-[11px] text-gray-500 flex items-center justify-end">
+                      <div className="gabai-stream-hint mt-1.5 text-[11px] text-gray-500 flex items-center justify-end">
                           Streaming… press{' '}
                           <span className="mx-1 rounded bg-white/5 px-1.5 py-0.5 border border-white/10 text-gray-300">
                             Stop
@@ -1776,8 +1765,7 @@ export function ChatBubble({
         whileTap={{
           scale: 0.95
         }}
-        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom,0px))] right-4 sm:right-6 h-14 w-14 rounded-full flex items-center justify-center shadow-2xl z-[61] bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-purple-500/30 transition-colors duration-300">
-        
+        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom,0px))] right-4 sm:right-6 h-14 w-14 rounded-full flex items-center justify-center shadow-2xl z-[61] bg-gradient-to-r from-sky-600 via-cyan-500 to-emerald-400 text-white shadow-sky-500/30 transition-colors duration-300">
         <AnimatePresence mode="wait">
           <motion.div
             key="chat"
@@ -1797,13 +1785,11 @@ export function ChatBubble({
               duration: 0.2
             }}
             className="relative">
-          
-              <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10">
+              <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10">
                 <img
                 src={CITEZEN_LOGO}
                 alt="Chat"
                 className="h-9 w-9 object-cover rounded-full" />
-              
               </div>
               {activeSession?.messages.length === 1 &&
           <span className="absolute -top-1 -right-1 flex h-3 w-3">

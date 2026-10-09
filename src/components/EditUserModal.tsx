@@ -106,10 +106,10 @@ export function EditUserModal({
   };
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark-900/80 backdrop-blur-sm animate-fade-in">
-      <div className="glass-panel w-full max-w-lg flex flex-col overflow-hidden animate-slide-up shadow-2xl shadow-purple-500/10">
+      <div className="glass-panel w-full max-w-lg flex flex-col overflow-hidden animate-slide-up shadow-2xl shadow-sky-500/10">
         <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+            <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400">
               <UserIcon className="h-5 w-5" />
             </div>
             <h3 className="text-lg font-semibold text-white">Edit User</h3>
@@ -139,7 +139,7 @@ export function EditUserModal({
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
                 required />
               
             </div>
@@ -158,7 +158,7 @@ export function EditUserModal({
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
                 required />
               
             </div>
@@ -176,7 +176,7 @@ export function EditUserModal({
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all appearance-none">
+                className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all appearance-none">
                 
                 <option value="student">Student</option>
                 <option value="staff">Staff</option>
@@ -200,7 +200,7 @@ export function EditUserModal({
                 value={formData.department}
                 onChange={handleChange}
                 placeholder="e.g. Academic Affairs"
-                className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all" />
+                className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all" />
               
               </div>
             </div>
@@ -218,7 +218,7 @@ export function EditUserModal({
                 value={formData.studentId}
                 onChange={handleChange}
                 placeholder="e.g. 2023-00142"
-                className="block w-full bg-dark-800/50 border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all" />
+                className="block w-full bg-dark-800/50 border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all" />
               
               </div>
               <div>
@@ -235,7 +235,7 @@ export function EditUserModal({
                   value={formData.course}
                   onChange={handleChange}
                   placeholder="e.g. BS Computer Science"
-                  className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all" />
+                  className="block w-full pl-10 bg-dark-800/50 border border-white/10 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all" />
                 
                 </div>
               </div>
@@ -255,7 +255,7 @@ export function EditUserModal({
               value={formData.newPassword}
               onChange={handleChange}
               placeholder="••••••••"
-              className="block w-full bg-dark-800/50 border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all" />
+              className="block w-full bg-dark-800/50 border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all" />
             
           </div>
 
@@ -270,7 +270,7 @@ export function EditUserModal({
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-500 transition-colors disabled:opacity-70">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 text-white text-sm font-medium hover:from-blue-500 hover:to-cyan-400 shadow-md shadow-sky-500/25 transition-all disabled:opacity-70">
               
               {isLoading ?
               <Loader2Icon className="h-4 w-4 animate-spin" /> :

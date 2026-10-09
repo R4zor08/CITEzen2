@@ -1,427 +1,418 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { User, Template, Concern, ConcernAttachment } from '../types';
-import { categories, templates } from '../data/templates';
+import { User, Concern, ConcernAttachment } from '../types';
 import { FileUploadZone } from './FileUploadZone';
 import {
-  requiresAuthenticityVerification
-} from '../lib/concernAttachments';
-import {
-  BookOpenIcon,
-  FileTextIcon,
-  WrenchIcon,
-  MessageSquareWarningIcon,
-  ArrowLeftIcon,
   CheckCircle2Icon,
-  AlertCircleIcon,
-  ShieldIcon
+  ShieldCheckIcon,
+  SendIcon,
+  ClockIcon,
+  BookmarkIcon,
+  CheckIcon
 } from 'lucide-react';
+
 interface ConcernFormProps {
   user: User;
   onSubmit: (concern: Partial<Concern>) => void | Promise<void>;
   onCancel: () => void;
 }
-const iconMap: Record<string, React.ElementType> = {
-  BookOpen: BookOpenIcon,
-  FileText: FileTextIcon,
-  Wrench: WrenchIcon,
-  MessageSquareWarning: MessageSquareWarningIcon
-};
-export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
-  const [step, setStep] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
-    null
-  );
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [priority, setPriority] = useState<
-    'low' | 'medium' | 'high' | 'urgent'>(
-    'medium');
-  const [filesByField, setFilesByField] = useState<Record<string, ConcernAttachment[]>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    setStep(2);
-  };
-  const handleTemplateSelect = (template: Template) => {
-    setSelectedTemplate(template);
-    // Initialize form data with default title and description
-    setFormData({
-      title: template.title,
-      description: ''
-    });
-    setFilesByField({});
-    setStep(3);
-  };
-  const handleInputChange = (
-  e: React.ChangeEvent<
-    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
 
-  {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
+  const DRAFT_KEY = `citezen_draft_${user.id}`;
+
+  const [title, setTitle] = useState(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.title || '';
+      }
+    } catch {}
+    return '';
+  });
+
+  const [description, setDescription] = useState(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.description || '';
+      }
+    } catch {}
+    return '';
+  });
+
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.priority) return parsed.priority;
+      }
+    } catch {}
+    return 'medium';
+  });
+
+  const [attachments, setAttachments] = useState<ConcernAttachment[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [draftSavedMessage, setDraftSavedMessage] = useState(false);
+
+  const handleSaveDraft = () => {
+    try {
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({ title, description, priority, updatedAt: new Date().toISOString() })
+      );
+      setDraftSavedMessage(true);
+      toast.success('Draft saved successfully', {
+        description: 'Your progress is stored locally on this device.'
+      });
+      setTimeout(() => setDraftSavedMessage(false), 3000);
+    } catch {
+      toast.error('Could not save draft');
+    }
   };
+
+  const handleClearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {}
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTemplate) return;
 
-    const unverifiedFiles = selectedTemplate.fields
-      .filter(
-        (f) =>
-          f.type === 'file' &&
-          requiresAuthenticityVerification(f.name, f.label)
-      )
-      .flatMap((f) => filesByField[f.name] ?? [])
-      .filter((file) => !file.verified);
+    if (!title.trim()) {
+      toast.error('Please enter a concern title.');
+      return;
+    }
 
+    if (!description.trim()) {
+      toast.error('Please provide a detailed description of your concern.');
+      return;
+    }
+
+    // Check if any attached image files failed verification
+    const unverifiedFiles = attachments.filter((file) => file.verified === false);
     if (unverifiedFiles.length > 0) {
       toast.error(
-        'Please upload and verify the required files before submitting your concern.'
+        'Please remove or replace attachments that failed authenticity verification before submitting.'
       );
       return;
     }
 
     setIsSubmitting(true);
-    const { title, description, ...restFormData } = formData;
-    const fileFieldNames = new Set(
-      selectedTemplate.fields.filter((f) => f.type === 'file').map((f) => f.name)
-    );
-    const cleanedFormData = Object.fromEntries(
-      Object.entries(restFormData).filter(([key]) => !fileFieldNames.has(key))
-    );
-    const allAttachments = Object.values(filesByField).flat();
     try {
       await onSubmit({
-        title: title || selectedTemplate.title,
-        description: description || 'No description provided.',
-        category: selectedTemplate.category,
-        subcategory: selectedTemplate.subcategory,
+        title: title.trim(),
+        description: description.trim(),
         priority,
-        department: selectedTemplate.routeTo,
-        formData: cleanedFormData,
-        attachments: allAttachments.length > 0 ? allAttachments : undefined
+        attachments: attachments.length > 0 ? attachments : undefined
       });
+      handleClearDraft();
     } finally {
       setIsSubmitting(false);
     }
   };
-  const availableTemplates = templates.filter(
-    (t) => t.category === selectedCategory
-  );
-  return (
-    <div className="glass-panel p-4 sm:p-6 md:p-8 lg:p-10 animate-fade-in max-w-full w-full rounded-2xl">
-      {/* Progress Header */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-lg sm:text-xl font-bold text-white">
-            Submit a Concern
-          </h2>
-          <div className="text-sm font-medium text-gray-400">
-            Step {step} of 3
-          </div>
-        </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div
-            className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-purple-500' : 'bg-white/10'}`} />
-          
-          <div
-            className={`h-1.5 flex-1 rounded-full ${step >= 2 ? 'bg-purple-500' : 'bg-white/10'}`} />
-          
-          <div
-            className={`h-1.5 flex-1 rounded-full ${step >= 3 ? 'bg-purple-500' : 'bg-white/10'}`} />
-          
+  const priorityOptions = [
+    {
+      id: 'low' as const,
+      label: 'Routine',
+      badge: 'Low',
+      sla: '3–5 Business Days',
+      desc: 'General inquiry, feedback, or non-urgent request',
+      dot: 'bg-emerald-400',
+      activeBorder: 'border-emerald-500',
+      activeBg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+      activeText: 'text-emerald-700 dark:text-emerald-300',
+      activeShadow: 'shadow-emerald-500/10',
+      selectedClass: 'priority-card--selected-low'
+    },
+    {
+      id: 'medium' as const,
+      label: 'Standard',
+      badge: 'Medium',
+      sla: '2–3 Business Days',
+      desc: 'Course issues, grade inquiries, and administrative requests',
+      dot: 'bg-sky-400',
+      activeBorder: 'border-sky-500',
+      activeBg: 'bg-sky-500/10 dark:bg-sky-500/15',
+      activeText: 'text-sky-700 dark:text-sky-300',
+      activeShadow: 'shadow-sky-500/10',
+      selectedClass: 'priority-card--selected-medium'
+    },
+    {
+      id: 'high' as const,
+      label: 'Priority',
+      badge: 'High',
+      sla: '24–48 Hours',
+      desc: 'Time-sensitive exam, enrollment, or clearance blockers',
+      dot: 'bg-amber-400',
+      activeBorder: 'border-amber-500',
+      activeBg: 'bg-amber-500/10 dark:bg-amber-500/15',
+      activeText: 'text-amber-700 dark:text-amber-300',
+      activeShadow: 'shadow-amber-500/10',
+      selectedClass: 'priority-card--selected-high'
+    },
+    {
+      id: 'urgent' as const,
+      label: 'Critical',
+      badge: 'Urgent',
+      sla: 'Immediate Escalation',
+      desc: 'Facility hazards, severe safety or immediate academic crisis',
+      dot: 'bg-rose-400',
+      activeBorder: 'border-rose-500',
+      activeBg: 'bg-rose-500/10 dark:bg-rose-500/15',
+      activeText: 'text-rose-700 dark:text-rose-300',
+      activeShadow: 'shadow-rose-500/10',
+      selectedClass: 'priority-card--selected-urgent'
+    }
+  ];
+
+  return (
+    <div className="glass-panel p-5 sm:p-7 md:p-9 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl animate-fade-in w-full transition-all">
+      {/* Header */}
+      <div className="mb-6 sm:mb-7 pb-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Submit a Concern
+          </h1>
+          <p className="form-helper text-xs sm:text-sm text-gray-400 mt-1 leading-relaxed">
+            Provide the details of your issue or request below. Your concern will be reviewed and routed to the proper department.
+          </p>
         </div>
       </div>
 
-      {/* Step 1: Category Selection */}
-      {step === 1 &&
-      <div className="animate-slide-up">
-          <h3 className="text-lg font-medium text-white mb-4">
-            What type of concern do you have?
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {categories.map((cat) => {
-            const Icon = iconMap[cat.icon] || AlertCircleIcon;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => handleCategorySelect(cat.id)}
-                className="flex flex-col items-start p-4 sm:p-5 min-h-[120px] sm:min-h-0 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-purple-500/50 transition-all text-left group touch-manipulation active:scale-[0.99]">
-                
-                  <div className="p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 text-purple-400 mb-3 sm:mb-4 group-hover:scale-105 transition-transform">
-                    <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
-                  </div>
-                  <h4 className="text-base font-semibold text-white mb-1 leading-snug">
-                    {cat.id}
-                  </h4>
-                  <p className="text-sm text-gray-400 leading-relaxed">
-                    {cat.description}
-                  </p>
-                </button>);
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Compact Student Identity Strip */}
+        <div className="submit-identity-strip p-3.5 sm:p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Student Avatar */}
+            {user.profilePicture ? (
+              <img
+                src={user.profilePicture}
+                alt={user.name}
+                className="h-10 w-10 rounded-full object-cover shrink-0 shadow-md shadow-sky-500/15 ring-2 ring-white/10"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 via-sky-600 to-cyan-500 text-white font-bold text-xs uppercase flex items-center justify-center shrink-0 shadow-md shadow-sky-500/15">
+                {user.name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join('')}
+              </div>
+            )}
 
-          })}
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+                <span className="student-name text-sm font-bold text-white tracking-tight truncate">
+                  {user.name}
+                </span>
+                <span className="student-dept-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                  {user.course || user.department || 'BSIT / CITE'}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 text-xs text-gray-400 mt-0.5">
+                <span className="student-id font-mono">ID: {user.studentId || '2023-01172'}</span>
+                <span className="text-gray-500 hidden sm:inline">•</span>
+                <span className="student-email truncate max-w-[200px] sm:max-w-xs">{user.email}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 shrink-0 self-start sm:self-center">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Verified Student
           </div>
         </div>
-      }
 
-      {/* Step 2: Template Selection */}
-      {step === 2 &&
-      <div className="animate-slide-up">
-          <button
-          onClick={() => setStep(1)}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors">
-          
-            <ArrowLeftIcon className="h-4 w-4" /> Back to Categories
-          </button>
-
-          <h3 className="text-lg font-medium text-white mb-4">
-            Select a specific template
-          </h3>
-
-          <div className="space-y-2.5 sm:space-y-3">
-            {availableTemplates.map((template) =>
-          <button
-            key={template.id}
-            type="button"
-            onClick={() => handleTemplateSelect(template)}
-            className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-purple-500/50 transition-all text-left group touch-manipulation min-h-[44px] active:scale-[0.99]">
-            
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-base font-medium text-white mb-1 group-hover:text-purple-300 transition-colors leading-snug">
-                    {template.title}
-                  </h4>
-                  <p className="text-sm text-gray-400 leading-relaxed">
-                    {template.description}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-cyan-400 bg-cyan-400/10 px-2.5 py-1.5 rounded-full border border-cyan-400/20 self-start sm:self-center">
-                  <span className="hidden sm:inline">Routes to:</span>
-                  <span className="sm:hidden">→</span>{' '}
-                  {template.routeTo}
-                </div>
-              </button>
-          )}
+        {/* Concern Title */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="form-label text-sm font-bold text-white flex items-center gap-1" htmlFor="concern-title">
+              <span>What can we help you with?</span>
+              <span className="text-rose-400">*</span>
+            </label>
+            <span className="text-xs text-gray-400 font-mono tabular-nums">
+              {title.length}/100
+            </span>
+          </div>
+          <p className="form-helper text-xs text-gray-400">
+            Provide a clear, descriptive headline so the assigned office understands your issue instantly.
+          </p>
+          <div className="relative">
+            <input
+              id="concern-title"
+              type="text"
+              name="title"
+              value={title}
+              maxLength={100}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., Missing grade in CS 201 Midterm, or Broken Air Conditioner in Room 304..."
+              required
+              className="form-input-field w-full px-4 py-3 rounded-xl bg-dark-800/80 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-inner"
+            />
           </div>
         </div>
-      }
 
-      {/* Step 3: Dynamic Form */}
-      {step === 3 && selectedTemplate &&
-      <div className="animate-slide-up">
-          <button
-          onClick={() => setStep(2)}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors">
-          
-            <ArrowLeftIcon className="h-4 w-4" /> Back to Templates
-          </button>
-
-          <div className="mb-6 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-start gap-3">
-            <AlertCircleIcon className="h-5 w-5 text-purple-400 shrink-0 mt-0.5" />
+        {/* Urgency & Turnaround Time */}
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-purple-300">
-                Smart Routing Active
-              </h3>
-              <p className="text-xs text-purple-400/80 mt-1">
-                This form will be automatically routed to the{' '}
-                <strong className="text-purple-300">
-                  {selectedTemplate.routeTo}
-                </strong>{' '}
-                department.
+              <label className="form-label text-sm font-bold text-white block">
+                Urgency & Turnaround Expectations
+              </label>
+              <p className="form-helper text-xs text-gray-400 mt-0.5">
+                Choose the priority that best reflects how time-sensitive your inquiry is.
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Auto-filled Student Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-              <div>
-                <span className="citezen-label text-xs !text-gray-500">
-                  Student Name
-                </span>
-                <div className="text-sm text-gray-300 py-1">{user.name}</div>
-              </div>
-              <div>
-                <span className="citezen-label text-xs !text-gray-500">
-                  Student ID
-                </span>
-                <div className="text-sm text-gray-300 py-1">
-                  {user.studentId || 'N/A'}
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            {priorityOptions.map((p) => {
+              const isSelected = priority === p.id;
 
-            {/* Title & Description (Always present) */}
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="citezen-label" htmlFor="concern-title">
-                  Concern Title <span className="text-red-400">*</span>
-                </label>
-                <input
-                id="concern-title"
-                type="text"
-                name="title"
-                value={formData.title || ''}
-                onChange={handleInputChange}
-                required
-                className="citezen-input" />
-              
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="citezen-label" htmlFor="concern-desc">
-                  General Description <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                id="concern-desc"
-                name="description"
-                value={formData.description || ''}
-                onChange={handleInputChange}
-                required
-                rows={4}
-                className="citezen-input citezen-textarea"
-                placeholder="Provide a brief overview of your concern..." />
-              
-              </div>
-            </div>
-
-            <div className="h-px w-full bg-white/10 my-6" />
-
-            {/* Dynamic Fields from Template */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">
-                Specific Details
-              </h4>
-
-              {selectedTemplate.fields.map((field) => {
-                const needsVerification =
-                  field.type === 'file' &&
-                  requiresAuthenticityVerification(field.name, field.label);
-                return (
-            <div key={field.name} className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="citezen-label" htmlFor={`field-${field.name}`}>
-                      {field.label}{' '}
-                      {field.required && <span className="text-red-400">*</span>}
-                    </label>
-                    {needsVerification ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-cyan-300/90">
-                        <ShieldIcon className="h-3 w-3" aria-hidden />
-                        AI check
-                      </span>
-                    ) : null}
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPriority(p.id)}
+                  className={`priority-card p-3.5 rounded-xl border text-left flex flex-col justify-between min-h-[84px] cursor-pointer touch-manipulation transition-all active:scale-[0.98] ${
+                    isSelected
+                      ? `${p.selectedClass} ${p.activeBorder} ${p.activeBg} ${p.activeText} ${p.activeShadow} shadow-md`
+                      : 'priority-card--unselected bg-white/[0.02] border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20 hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="font-bold text-sm flex items-center gap-1.5">
+                      <span
+                        className={`h-2 w-2 rounded-full ${p.dot} ${
+                          isSelected ? 'animate-pulse ring-2 ring-current/30' : 'opacity-60'
+                        }`}
+                      />
+                      <span>{p.label}</span>
+                      <span className="text-[11px] font-normal opacity-75 font-mono">({p.badge})</span>
+                    </span>
+                    {isSelected ? (
+                      <CheckCircle2Icon className="h-4 w-4 shrink-0 text-current" />
+                    ) : (
+                      <span className="h-4 w-4 rounded-full border border-gray-600 dark:border-gray-500 opacity-40 shrink-0" />
+                    )}
                   </div>
-                  {needsVerification ? (
-                    <p className="text-xs text-gray-500 -mt-0.5">
-                      Upload original photos only — images are verified before submit.
-                    </p>
-                  ) : null}
+                  <div className="mt-1 space-y-0.5">
+                    <div className="text-[11px] font-semibold text-current opacity-90 flex items-center gap-1">
+                      <ClockIcon className="h-3 w-3 shrink-0 opacity-75" />
+                      <span>{p.sla}</span>
+                    </div>
+                    <p className="text-[11px] opacity-75 leading-tight line-clamp-1">{p.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-                  {field.type === 'text' || field.type === 'date' ?
-              <input
-                id={`field-${field.name}`}
-                type={field.type}
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={handleInputChange}
-                required={field.required}
-                placeholder={field.placeholder}
-                className="citezen-input" /> :
+        {/* Detailed Description */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="form-label text-sm font-bold text-white flex items-center gap-1" htmlFor="concern-desc">
+              <span>Detailed Description & Context</span>
+              <span className="text-rose-400">*</span>
+            </label>
+            <span className="text-xs text-gray-400 font-mono tabular-nums">
+              {description.length} characters
+            </span>
+          </div>
+          <p className="form-helper text-xs text-gray-400">
+            Share all specific details (course codes, professor or staff names, room locations, and requested outcome) so we can route and resolve this without delays.
+          </p>
+          <textarea
+            id="concern-desc"
+            name="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+            rows={5}
+            className="form-input-field w-full px-4 py-3 rounded-xl bg-dark-800/80 border border-white/10 text-white placeholder-gray-500 text-sm leading-relaxed focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-inner custom-scrollbar"
+            placeholder="Describe what occurred, who you spoke with, when it took place, and how the department can assist you..."
+          />
+        </div>
 
-              field.type === 'textarea' ?
-              <textarea
-                id={`field-${field.name}`}
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={handleInputChange}
-                required={field.required}
-                placeholder={field.placeholder}
-                rows={4}
-                className="citezen-input citezen-textarea" /> :
-
-              field.type === 'select' ?
-              <select
-                id={`field-${field.name}`}
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={handleInputChange}
-                required={field.required}
-                className="citezen-input appearance-none bg-[var(--bg-secondary)]">
-                
-                      <option value="" disabled>
-                        Select an option
-                      </option>
-                      {field.options?.map((opt) =>
-                <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                )}
-                    </select> :
-              field.type === 'file' ?
-              <FileUploadZone
-                fieldName={field.name}
-                fieldLabel={field.label}
-                files={filesByField[field.name] ?? []}
-                onChange={(files) =>
-                  setFilesByField((prev) => ({ ...prev, [field.name]: files }))
-                }
-                disabled={isSubmitting}
-                requireAuthenticityVerification={needsVerification}
-              /> :
-              null}
-                </div>
-            );
-              })}
-            </div>
-
-            {/* Priority Selection */}
-            <div className="pt-4">
-              <label className="block text-sm font-medium text-gray-300 mb-3">
-                Priority Level
+        {/* Supporting Documents & Verification */}
+        <div className="space-y-2 pt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <label className="form-label text-sm font-bold text-white block">
+                Supporting Documents & Evidence <span className="text-gray-400 text-xs font-normal">(Optional)</span>
               </label>
-              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
-                {(['low', 'medium', 'high', 'urgent'] as const).map((p) =>
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPriority(p)}
-                className={`min-h-[48px] sm:min-h-[44px] px-3 sm:px-4 py-2.5 rounded-xl text-sm font-medium capitalize border transition-all touch-manipulation ${priority === p ? p === 'urgent' ? 'bg-red-500/20 border-red-500/50 text-red-400' : p === 'high' ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' : p === 'medium' ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-gray-500/20 border-gray-500/50 text-gray-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>
-                
-                    {p}
-                  </button>
-              )}
-              </div>
+              <p className="form-helper text-xs text-gray-400 mt-0.5">
+                Attach official forms, grade slips, medical certificates, or photos (PNG, JPG, PDF up to 10MB each).
+              </p>
             </div>
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-500/20 shrink-0 self-start sm:self-auto">
+              <ShieldCheckIcon className="h-3.5 w-3.5" /> AI Authenticity Check Active
+            </span>
+          </div>
+          <FileUploadZone
+            fieldName="Supporting Documents"
+            fieldLabel="Supporting Documents"
+            files={attachments}
+            onChange={setAttachments}
+            disabled={isSubmitting}
+            requireAuthenticityVerification={true}
+          />
+        </div>
 
-            {/* Actions */}
-            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-6 border-t border-white/10 mt-6 sm:mt-8">
-              <button
+        {/* Actions Toolbar */}
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-white/10 mt-8">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={isSubmitting}
+              className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 border border-white/10 transition-colors flex items-center justify-center gap-1.5 touch-manipulation disabled:opacity-50"
+            >
+              <BookmarkIcon className="h-4 w-4" />
+              <span>Save Draft</span>
+            </button>
+            {draftSavedMessage && (
+              <span className="text-xs text-emerald-400 flex items-center gap-1 animate-fade-in font-medium">
+                <CheckIcon className="h-3.5 w-3.5" /> Draft saved
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            <button
               type="button"
               onClick={onCancel}
-              className="min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-center border border-white/10 sm:border-transparent touch-manipulation">
-              
-                Cancel
-              </button>
-              <button
+              disabled={isSubmitting}
+              className="min-h-[44px] px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-center border border-white/10 sm:border-transparent touch-manipulation disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
               type="submit"
               disabled={isSubmitting}
-              className="min-h-[48px] sm:min-h-0 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-3 sm:py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-[0.99] disabled:opacity-70 touch-manipulation">
-              
-                {isSubmitting ?
-              <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> :
-
-              <CheckCircle2Icon className="h-4 w-4" />
-              }
-                Submit Concern
-              </button>
-            </div>
-          </form>
+              className="min-h-[44px] flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 px-7 py-2.5 text-sm font-semibold text-white shadow-xl shadow-sky-500/25 transition-all active:scale-[0.98] disabled:opacity-70 touch-manipulation"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  <span>Submitting Concern...</span>
+                </>
+              ) : (
+                <>
+                  <SendIcon className="h-4 w-4" />
+                  <span>Submit Concern</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      }
-    </div>);
-
+      </form>
+    </div>
+  );
 }

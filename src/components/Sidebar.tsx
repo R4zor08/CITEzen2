@@ -163,12 +163,42 @@ export function Sidebar({
             if (isMobile) onCloseMobile();
           }}
           title={!showLabel ? tab.label : undefined}
-          className={`group relative flex w-full items-center ${showLabel ? 'justify-between' : 'justify-center'} rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'}`}>
-          
+          className={`group relative flex w-full items-center ${showLabel ? 'justify-between' : 'justify-center'} rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 border ${
+            isActive
+              ? 'nav-tab-active border-transparent'
+              : 'nav-tab-inactive border-transparent hover:bg-white/5'
+          }`}>
             <div className="flex items-center gap-3">
               <div className="relative">
-                <Icon
-                className={`h-5 w-5 shrink-0 ${isActive ? 'text-purple-400' : 'text-gray-500 group-hover:text-gray-300'}`} />
+                {tab.id === 'profile' ? (
+                  user.profilePicture ? (
+                    <img
+                      src={user.profilePicture}
+                      alt={user.name}
+                      className={`h-5 w-5 rounded-full object-cover shrink-0 ring-1.5 transition-all ${
+                        isActive
+                          ? 'ring-sky-400 shadow-sm shadow-sky-500/40 scale-105'
+                          : 'ring-white/20 group-hover:ring-sky-400/60'
+                      }`}
+                    />
+                  ) : (
+                    <div
+                      className={`h-5 w-5 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-[10px] font-bold text-white flex items-center justify-center shrink-0 ring-1.5 transition-all ${
+                        isActive
+                          ? 'ring-sky-400 shadow-sm shadow-sky-500/40 scale-105'
+                          : 'ring-white/20 group-hover:ring-sky-400/60'
+                      }`}
+                    >
+                      {user.name ? user.name[0].toUpperCase() : 'U'}
+                    </div>
+                  )
+                ) : (
+                  <Icon
+                    className={`h-5 w-5 shrink-0 transition-colors ${
+                      isActive ? 'nav-tab-icon-active' : 'text-gray-500 group-hover:text-gray-300'
+                    }`}
+                  />
+                )}
               
                 {isNotification && unreadCount > 0 && !showLabel &&
               <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-dark-900 z-20" />
@@ -201,7 +231,7 @@ export function Sidebar({
             </div>
 
             {showLabel && isActive &&
-          <ChevronRightIcon className="h-4 w-4 text-purple-400 shrink-0" />
+          <ChevronRightIcon className="h-4 w-4 nav-tab-icon-active shrink-0" />
           }
           </button>);
 
@@ -229,12 +259,11 @@ export function Sidebar({
             onClick={isCollapsed ? onToggleCollapse : undefined}
             title={isCollapsed ? 'Expand Sidebar' : undefined}>
             
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 hover:border-purple-500/30 transition-colors">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10 hover:border-sky-500/30 transition-colors">
               <img
-                src="/citezen.png"
+                src="/citezen.png?v=2"
                 alt="Logo"
                 className="h-9 w-9 object-cover rounded-full" />
-              
             </div>
             <AnimatePresence>
               {!isCollapsed &&
@@ -296,25 +325,28 @@ export function Sidebar({
                 <span className="text-sm font-medium text-white truncate">
                   {user.name}
                 </span>
-                <span className="text-xs text-purple-400 capitalize truncate">
-                  {user.role}
-                </span>
+                {user.role !== 'student' && (
+                  <span className="text-xs text-sky-400 capitalize truncate">
+                    {user.role}
+                  </span>
+                )}
               </div>
             }
           </button>
 
-          {/* Logout Button */}
+          {/* Logout Button (Red Theme) */}
           <button
             onClick={onLogout}
-            className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start gap-3 px-3'} py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors border border-transparent hover:border-red-500/20 w-full group`}
+            className={`btn-logout flex items-center ${isCollapsed ? 'justify-center' : 'justify-start gap-3 px-3'} py-2.5 rounded-xl transition-all duration-200 w-full group active:scale-[0.98] font-medium text-white`}
             title={isCollapsed ? 'Log out' : undefined}>
-            
-            <LogOutIcon className="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform" />
-            {!isCollapsed &&
-            <span className="text-sm font-medium whitespace-nowrap">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white group-hover:scale-110 transition-transform">
+              <LogOutIcon className="h-4 w-4 text-white" />
+            </div>
+            {!isCollapsed && (
+              <span className="text-sm font-semibold whitespace-nowrap text-white">
                 Log out
               </span>
-            }
+            )}
           </button>
         </div>
       </motion.aside>
@@ -352,12 +384,11 @@ export function Sidebar({
             
               <div className="flex items-center justify-between h-16 px-4 shrink-0 border-b border-white/5">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10">
+                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10">
                     <img
-                    src="/citezen.png"
+                    src="/citezen.png?v=2"
                     alt="Logo"
                     className="h-8 w-8 object-cover rounded-full" />
-                  
                   </div>
                   <span className="text-lg font-bold tracking-tight text-white">
                     CITE<span className="text-gradient">zen</span>
@@ -399,22 +430,25 @@ export function Sidebar({
                     <span className="text-sm font-medium text-white truncate">
                       {user.name}
                     </span>
-                    <span className="text-xs text-purple-400 capitalize truncate">
-                      {user.role}
-                    </span>
+                    {user.role !== 'student' && (
+                      <span className="text-xs text-sky-400 capitalize truncate">
+                        {user.role}
+                      </span>
+                    )}
                   </div>
                 </button>
 
-                {/* Mobile Logout */}
+                {/* Mobile Logout (Red Theme) */}
                 <button
-                onClick={() => {
-                  onCloseMobile();
-                  onLogout();
-                }}
-                className="flex items-center justify-start gap-3 px-3 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors border border-transparent hover:border-red-500/20 w-full">
-                
-                  <LogOutIcon className="h-5 w-5 shrink-0" />
-                  <span className="text-sm font-medium">Log out</span>
+                  onClick={() => {
+                    onCloseMobile();
+                    onLogout();
+                  }}
+                  className="btn-logout flex items-center justify-start gap-3 px-3.5 py-3 rounded-xl transition-all duration-200 w-full font-medium active:scale-[0.98] text-white">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white">
+                    <LogOutIcon className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-white">Log out</span>
                 </button>
               </div>
             </motion.aside>

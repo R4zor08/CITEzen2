@@ -71,25 +71,25 @@ export function ChatHistorySidebar({
   className = ''
 }: ChatHistorySidebarProps) {
   return (
-    <div className={`flex flex-col flex-1 min-h-0 bg-dark-900 ${className}`}>
-      <div className="flex items-center justify-between px-3 py-3 border-b border-white/10 bg-dark-900 shrink-0">
+    <div className={`gabai-history flex flex-col flex-1 min-h-0 bg-dark-900 ${className}`}>
+      <div className="gabai-history-bar flex items-center justify-between px-3 py-3 border-b border-white/10 bg-dark-900 shrink-0">
         <h3 className="text-sm font-semibold text-white">Chats</h3>
         {showCloseButton && onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="gabai-icon-btn p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Close chats">
             <XIcon className="h-5 w-5" />
           </button>
         )}
       </div>
 
-      <div className="px-3 py-3 border-b border-white/10 bg-dark-900 shrink-0 space-y-2">
+      <div className="gabai-history-bar px-3 py-3 border-b border-white/10 bg-dark-900 shrink-0 space-y-2">
         <button
           type="button"
           onClick={onNewChat}
-          className="w-full min-h-[44px] py-2.5 rounded-lg border border-white/10 bg-transparent text-gray-200 hover:bg-white/5 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+          className="gabai-history-new-btn w-full min-h-[44px] py-2.5 rounded-lg border border-white/10 bg-transparent text-gray-200 hover:bg-white/5 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
           <PlusIcon className="h-4 w-4 shrink-0" /> New chat
         </button>
         <div className="relative">
@@ -100,7 +100,7 @@ export function ChatHistorySidebar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search chats…"
-            className="w-full bg-dark-800 border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/20 focus:ring-0"
+            className="gabai-history-input w-full bg-dark-800 border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/20 focus:ring-0"
           />
         </div>
       </div>
@@ -125,7 +125,7 @@ export function ChatHistorySidebar({
                     e.stopPropagation();
                     onToggleGroup(group);
                   }}
-                  className="flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-white/5 transition-colors group/header">
+                  className="gabai-history-group flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-white/5 transition-colors group/header">
                   <h4 className="text-xs font-medium text-gray-500">{group}</h4>
                   <motion.div
                     animate={{ rotate: collapsedGroups[group] ? -90 : 0 }}
@@ -145,7 +145,7 @@ export function ChatHistorySidebar({
                             if (editingChatId === session.id) return;
                             onSelectSession(session.id);
                           }}
-                          className={`group relative flex items-center min-h-[44px] px-3 py-2 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}`}>
+                          className={`gabai-history-item group relative flex items-center min-h-[44px] px-3 py-2 rounded-lg cursor-pointer transition-colors ${isActive ? 'gabai-active bg-white/10' : 'hover:bg-white/5'}`}>
                           {editingChatId === session.id ? (
                             <input
                               autoFocus
@@ -156,7 +156,7 @@ export function ChatHistorySidebar({
                                 if (e.key === 'Enter') onSaveRename(session.id);
                                 if (e.key === 'Escape') onCancelRename();
                               }}
-                              className="flex-1 min-w-0 bg-dark-800 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-white/30"
+                              className="gabai-history-rename flex-1 min-w-0 bg-dark-800 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-white/30"
                               onClick={(e) => e.stopPropagation()}
                             />
                           ) : (
@@ -172,7 +172,7 @@ export function ChatHistorySidebar({
                               e.stopPropagation();
                               onOpenMenu(isMenuOpen ? null : session.id);
                             }}
-                            className={`absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-md text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0 ${isMenuOpen ? 'opacity-100 bg-white/10' : 'opacity-0 group-hover:opacity-100 max-md:opacity-100'}`}
+                            className={`gabai-icon-btn absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-md text-gray-400 hover:bg-white/10 hover:text-white transition-colors shrink-0 ${isMenuOpen ? 'opacity-100 bg-white/10' : 'opacity-0 group-hover:opacity-100 max-md:opacity-100'}`}
                             aria-label="Chat options">
                             <MoreHorizontalIcon className="h-4 w-4" />
                           </button>
@@ -192,7 +192,7 @@ export function ChatHistorySidebar({
                                   animate={{ opacity: 1, scale: 1 }}
                                   exit={{ opacity: 0, scale: 0.95 }}
                                   transition={{ duration: 0.12 }}
-                                  className="absolute right-0 top-full mt-1 z-[70] w-36 bg-dark-800 border border-white/10 rounded-lg shadow-xl overflow-hidden py-1"
+                                  className="gabai-history-menu absolute right-0 top-full mt-1 z-[70] w-36 bg-dark-800 border border-white/10 rounded-lg shadow-xl overflow-hidden py-1"
                                   onClick={(e) => e.stopPropagation()}>
                                   <button
                                     type="button"
@@ -200,7 +200,7 @@ export function ChatHistorySidebar({
                                       onStartRename(session.id, session.title);
                                       onOpenMenu(null);
                                     }}
-                                    className="w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10 flex items-center gap-2">
+                                    className="gabai-history-menu-item w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10 flex items-center gap-2">
                                     <PencilIcon className="h-3.5 w-3.5 text-gray-400" />
                                     Rename
                                   </button>
@@ -210,7 +210,7 @@ export function ChatHistorySidebar({
                                       onDeleteRequest(session.id);
                                       onOpenMenu(null);
                                     }}
-                                    className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2">
+                                    className="gabai-history-menu-item gabai-history-menu-delete w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2">
                                     <Trash2Icon className="h-3.5 w-3.5" />
                                     Delete
                                   </button>

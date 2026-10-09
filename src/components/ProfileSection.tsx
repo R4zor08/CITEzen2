@@ -1,35 +1,143 @@
-import React, { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 import {
-  UserIcon,
   CameraIcon,
-  MailIcon,
-  HashIcon,
-  BuildingIcon,
-  BookOpenIcon,
   LockIcon,
   SaveIcon,
   Loader2Icon,
-  Edit2Icon,
+  PencilIcon,
   XIcon,
   AlertTriangleIcon,
-  SunIcon,
-  MoonIcon } from
-'lucide-react';
+  BadgeCheckIcon,
+  CopyIcon,
+  MonitorIcon
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { useTheme } from '../hooks/useTheme';
+
 interface ProfileSectionProps {
   user: User;
   onUpdateProfile: (data: Partial<User>) => Promise<void>;
 }
+
+type SettingsTab = 'profile' | 'security';
+type EditableCard = 'identity' | 'personal' | 'academic' | 'security' | null;
+
+const ROLE_LABEL: Record<User['role'], string> = {
+  student: 'Student',
+  staff: 'Staff Member',
+  admin: 'Administrator'
+};
+
+function splitName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: '', lastName: '' };
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+}
+
+function joinName(firstName: string, lastName: string) {
+  return `${firstName} ${lastName}`.replace(/\s+/g, ' ').trim();
+}
+
+function initialsFrom(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function FieldBlock({
+  label,
+  value,
+  editing,
+  name,
+  type = 'text',
+  disabled,
+  placeholder,
+  onChange,
+  mono,
+  onCopy
+}: {
+  label: string;
+  value: string;
+  editing: boolean;
+  name: string;
+  type?: string;
+  disabled?: boolean;
+  placeholder?: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  mono?: boolean;
+  onCopy?: () => void;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="profile-field-label">{label}</p>
+      {editing && !disabled ? (
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="profile-input"
+        />
+      ) : (
+        <div className="flex items-center gap-1.5 min-w-0">
+          <p
+            className={`profile-field-value truncate ${mono ? 'font-mono tracking-wide' : ''} ${
+              disabled && editing ? 'opacity-70' : ''
+            }`}
+          >
+            {value || '—'}
+          </p>
+          {onCopy && value && value !== '—' && (
+            <button
+              type="button"
+              onClick={onCopy}
+              className="shrink-0 p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors"
+              aria-label={`Copy ${label}`}
+            >
+              <CopyIcon className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EditButton({
+  editing,
+  onEdit,
+  onCancel
+}: {
+  editing: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={editing ? onCancel : onEdit}
+      className="profile-edit-btn"
+    >
+      {editing ? <XIcon className="h-3.5 w-3.5" /> : <PencilIcon className="h-3.5 w-3.5" />}
+      {editing ? 'Cancel' : 'Edit'}
+    </button>
+  );
+}
+
 export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
-  const { isDark, toggleTheme } = useTheme();
-  const [isEditing, setIsEditing] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('profile');
+  const [editingCard, setEditingCard] = useState<EditableCard>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const split = splitName(user.name);
   const [formData, setFormData] = useState({
     name: user.name,
+    firstName: split.firstName,
+    lastName: split.lastName,
     email: user.email,
     studentId: user.studentId || '',
     department: user.department || '',
@@ -42,12 +150,74 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
     user.profilePicture || null
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  useEffect(() => {
+    const next = splitName(user.name);
+    setFormData((prev) => ({
+      ...prev,
+      name: user.name,
+      firstName: next.firstName,
+      lastName: next.lastName,
+      email: user.email,
+      studentId: user.studentId || '',
+      department: user.department || '',
+      course: user.course || ''
+    }));
+    setAvatarPreview(user.profilePicture || null);
+  }, [user]);
+
+  const roleLabel = ROLE_LABEL[user.role];
+  const displayName = editingCard === 'identity' ? formData.name : user.name;
+  const subtitle =
+    user.role === 'student'
+      ? user.course || 'College of Information Technology Education'
+      : user.role === 'staff'
+        ? user.department || 'Staff'
+        : 'System Administrator';
+
+  const resetForm = () => {
+    const next = splitName(user.name);
     setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
+      name: user.name,
+      firstName: next.firstName,
+      lastName: next.lastName,
+      email: user.email,
+      studentId: user.studentId || '',
+      department: user.department || '',
+      course: user.course || '',
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setAvatarPreview(user.profilePicture || null);
+  };
+
+  const startEdit = (card: EditableCard) => {
+    resetForm();
+    setEditingCard(card);
+  };
+
+  const cancelEdit = () => {
+    setEditingCard(null);
+    resetForm();
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      if (name === 'firstName' || name === 'lastName') {
+        const firstName = name === 'firstName' ? value : prev.firstName;
+        const lastName = name === 'lastName' ? value : prev.lastName;
+        return { ...prev, firstName, lastName, name: joinName(firstName, lastName) };
+      }
+      if (name === 'name') {
+        const parts = splitName(value);
+        return { ...prev, name: value, firstName: parts.firstName, lastName: parts.lastName };
+      }
+      return { ...prev, [name]: value };
     });
   };
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -57,15 +227,23 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setAvatarPreview(base64String);
+        setAvatarPreview(reader.result as string);
+        if (editingCard !== 'identity') setEditingCard('identity');
       };
       reader.readAsDataURL(file);
     }
   };
-  const handleInitialSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Basic validation
+
+  const copyValue = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success('Copied to clipboard');
+    } catch {
+      toast.error('Could not copy');
+    }
+  };
+
+  const validateAndConfirm = () => {
     if (!formData.name.trim()) {
       toast.error('Name is required');
       return;
@@ -76,7 +254,7 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
         return;
       }
     }
-    if (formData.newPassword) {
+    if (editingCard === 'security' && formData.newPassword) {
       if (formData.newPassword.length < 6) {
         toast.error('New password must be at least 6 characters');
         return;
@@ -86,9 +264,9 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
         return;
       }
     }
-    // Show confirmation modal instead of saving immediately
     setShowConfirmModal(true);
   };
+
   const handleConfirmSave = async () => {
     setIsLoading(true);
     try {
@@ -107,526 +285,515 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
       };
       await onUpdateProfile(updateData);
       toast.success('Profile updated successfully');
-      setIsEditing(false);
+      setEditingCard(null);
       setShowConfirmModal(false);
-      // Clear password fields
       setFormData((prev) => ({
         ...prev,
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       }));
-    } catch (error) {
+    } catch {
       toast.error('Failed to update profile');
     } finally {
       setIsLoading(false);
     }
   };
+
   const handleDiscard = () => {
     setShowConfirmModal(false);
-    setIsEditing(false);
-    setFormData({
-      name: user.name,
-      email: user.email,
-      studentId: user.studentId || '',
-      department: user.department || '',
-      course: user.course || '',
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
-    setAvatarPreview(user.profilePicture || null);
+    setEditingCard(null);
+    resetForm();
   };
-  const handleCancel = () => {
-    setIsEditing(false);
-    setFormData({
-      name: user.name,
-      email: user.email,
-      studentId: user.studentId || '',
-      department: user.department || '',
-      course: user.course || '',
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
-    setAvatarPreview(user.profilePicture || null);
-  };
-  return (
-    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto px-1 sm:px-0">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white">
-            Profile Settings
-          </h1>
-          <p className="text-sm sm:text-base text-gray-400">
-            Manage your account details and preferences.
-          </p>
-        </div>
-        <AnimatePresence mode="wait">
-          {!isEditing ?
-          <motion.button
-            key="edit-btn"
-            initial={{
-              opacity: 0,
-              scale: 0.95
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.95
-            }}
-            onClick={() => setIsEditing(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-500 transition-colors shadow-lg shadow-purple-500/20 w-full sm:w-auto">
-            
-              <Edit2Icon className="h-4 w-4" />
-              Edit Profile
-            </motion.button> :
 
-          <motion.button
-            key="cancel-btn"
-            initial={{
-              opacity: 0,
-              scale: 0.95
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.95
-            }}
-            onClick={handleCancel}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/10 transition-colors w-full sm:w-auto">
-            
-              <XIcon className="h-4 w-4" />
-              Cancel Editing
-            </motion.button>
-          }
-        </AnimatePresence>
+  const switchTab = (tab: SettingsTab) => {
+    setSettingsTab(tab);
+    setEditingCard(null);
+    resetForm();
+  };
+
+  const navItems: { id: SettingsTab; label: string }[] = [
+    { id: 'profile', label: 'My Profile' },
+    { id: 'security', label: 'Security' }
+  ];
+
+  const saveBar = (visible: boolean) =>
+    visible ? (
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-5 mt-5 border-t border-[var(--border-color)]">
+        <button
+          type="button"
+          onClick={cancelEdit}
+          disabled={isLoading}
+          className="px-4 py-2 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors"
+        >
+          Discard
+        </button>
+        <button
+          type="button"
+          onClick={validateAndConfirm}
+          disabled={isLoading}
+          className="flex items-center justify-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-semibold shadow-md shadow-sky-500/20 transition-all disabled:opacity-70"
+        >
+          {isLoading ? (
+            <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <SaveIcon className="h-3.5 w-3.5" />
+          )}
+          Save changes
+        </button>
       </div>
+    ) : null;
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        {/* Left Column: Avatar & Role Info */}
-        <div className="md:col-span-1 space-y-4 sm:space-y-6">
-          <motion.div
-            layout
-            className="glass-panel p-4 sm:p-6 flex flex-col items-center text-center relative overflow-hidden">
-            
-            {/* Background decoration */}
-            <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-purple-500/10 to-transparent pointer-events-none" />
-
-            <div className="relative group mb-4 z-10">
-              <motion.div
-                layoutId="avatar"
-                className="h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-dark-800 border-4 border-dark-900 shadow-xl flex items-center justify-center overflow-hidden ring-2 ring-purple-500/30">
-                
-                {avatarPreview ?
-                <img
-                  src={avatarPreview}
-                  alt="Avatar preview"
-                  className="h-full w-full object-cover" /> :
-
-
-                <UserIcon className="h-10 w-10 sm:h-12 sm:w-12 text-purple-400" />
-                }
-              </motion.div>
-
-              <AnimatePresence>
-                {isEditing &&
-                <motion.label
-                  initial={{
-                    opacity: 0
-                  }}
-                  animate={{
-                    opacity: 1
-                  }}
-                  exit={{
-                    opacity: 0
-                  }}
-                  className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full cursor-pointer backdrop-blur-sm transition-colors hover:bg-black/70">
-                  
-                    <div className="flex flex-col items-center text-white">
-                      <CameraIcon className="h-6 w-6 mb-1" />
-                      <span className="text-[10px] font-medium uppercase tracking-wider">
-                        Change
-                      </span>
-                    </div>
+  const avatarNode = (
+    <div className="relative shrink-0">
+      <div className="profile-avatar-ring h-[4.25rem] w-[4.25rem] sm:h-[4.75rem] sm:w-[4.75rem] rounded-full bg-[var(--bg-tertiary)] overflow-hidden flex items-center justify-center">
+                {avatarPreview ? (
+                  <img
+                    src={avatarPreview}
+            alt={displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+          <span className="text-lg sm:text-xl font-semibold text-sky-400 tracking-wide">
+            {initialsFrom(displayName)}
+          </span>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        className="absolute -bottom-0.5 -right-0.5 h-7 w-7 rounded-full bg-sky-500 text-white flex items-center justify-center shadow-lg border-2 border-[var(--bg-secondary)] hover:bg-sky-400 transition-colors"
+        aria-label="Change profile photo"
+      >
+        <CameraIcon className="h-3.5 w-3.5" />
+      </button>
                     <input
-                    type="file"
-                    accept="image/jpeg, image/png, image/webp"
-                    className="hidden"
-                    ref={fileInputRef}
-                    onChange={handleAvatarChange} />
-                  
-                  </motion.label>
-                }
-              </AnimatePresence>
+                      type="file"
+                      accept="image/jpeg, image/png, image/webp"
+                      className="hidden"
+                      ref={fileInputRef}
+                      onChange={handleAvatarChange}
+                    />
             </div>
+  );
 
-            <motion.h2
-              layout="position"
-              className="text-xl font-bold text-white mb-1">
-              
-              {isEditing ? formData.name || 'Your Name' : user.name}
-            </motion.h2>
-
-            <motion.div
-              layout="position"
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 capitalize shadow-sm">
-              
-              {user.role} Account
-            </motion.div>
-
-            {/* Theme Toggle */}
-            <motion.div
-              layout="position"
-              className="mt-6 w-full pt-6 border-t border-white/5">
-              
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-dark-800/50 border border-white/5">
-                <span className="text-sm font-medium text-gray-300">
-                  Appearance
-                </span>
-                <button
-                  onClick={toggleTheme}
-                  className="relative flex items-center w-12 h-6 rounded-full bg-dark-900 border border-white/10 transition-colors hover:border-purple-500/50"
-                  title="Toggle Theme">
-                  
-                  <div className="absolute inset-0 flex items-center justify-between px-1.5 pointer-events-none">
-                    <MoonIcon className="h-3 w-3 text-gray-500" />
-                    <SunIcon className="h-3 w-3 text-gray-500" />
-                  </div>
-                  <motion.div
-                    layout
-                    transition={{
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 30
-                    }}
-                    className={`absolute w-5 h-5 rounded-full bg-purple-500 shadow-sm flex items-center justify-center ${isDark ? 'left-0.5' : 'right-0.5'}`}>
-                    
-                    {isDark ?
-                    <MoonIcon className="h-3 w-3 text-white" /> :
-
-                    <SunIcon className="h-3 w-3 text-white" />
-                    }
-                  </motion.div>
-                </button>
-              </div>
-            </motion.div>
-
-            {user.studentId &&
-            <motion.div
-              layout="position"
-              className="mt-5 pt-5 border-t border-white/5 w-full text-sm text-gray-400 flex justify-between items-center">
-              
-                <span>Student ID</span>
-                <span className="text-gray-300 font-mono bg-dark-800 px-2 py-1 rounded-md border border-white/5">
-                  {user.studentId}
-                </span>
-              </motion.div>
-            }
-          </motion.div>
+  return (
+    <div className="profile-settings animate-fade-in max-w-5xl mx-auto">
+      <div className="mb-7">
+        <h1 className="text-2xl sm:text-[1.75rem] font-semibold text-[var(--text-primary)] tracking-tight">
+          Account Settings
+        </h1>
+        <p className="text-sm text-[var(--text-secondary)] mt-1">
+          Manage your profile details and security preferences.
+        </p>
         </div>
 
-        {/* Right Column: Form */}
-        <div className="md:col-span-2">
-          <motion.form
-            layout
-            onSubmit={handleInitialSubmit}
-            className="glass-panel p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6 relative overflow-hidden">
-            
-            {/* Edit mode indicator border */}
-            <AnimatePresence>
-              {isEditing &&
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
+        <nav className="lg:w-[11.5rem] shrink-0 lg:sticky lg:top-2 lg:self-start">
+          <div className="flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 -mx-1 px-1">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => switchTab(item.id)}
+                className={`profile-nav-item ${settingsTab === item.id ? 'is-active' : ''}`}
+              >
+                {item.label}
+              </button>
+            ))}
+            </div>
+        </nav>
+
+        <div className="flex-1 min-w-0">
+          <AnimatePresence mode="wait">
+            {settingsTab === 'profile' && (
               <motion.div
-                initial={{
-                  opacity: 0
-                }}
-                animate={{
-                  opacity: 1
-                }}
-                exit={{
-                  opacity: 0
-                }}
-                className="absolute inset-0 border-2 border-purple-500/30 rounded-xl pointer-events-none" />
-
-              }
-            </AnimatePresence>
-
-            <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-4 flex items-center gap-2">
-              <UserIcon className="h-5 w-5 text-purple-400" />
-              Personal Information
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <motion.div layout="position">
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <UserIcon
-                      className={`h-4 w-4 ${isEditing ? 'text-purple-400' : 'text-gray-500'} transition-colors`} />
-                    
-                  </div>
+                key="profile"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
+                className="space-y-4 sm:space-y-5"
+              >
+                <section className="profile-card">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      {avatarNode}
+                      <div className="min-w-0">
+                        {editingCard === 'identity' ? (
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    disabled={!isEditing}
-                    className={`block w-full pl-10 rounded-xl py-2.5 text-sm transition-all ${isEditing ? 'bg-dark-800 border-purple-500/50 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 shadow-[0_0_15px_rgba(139,92,246,0.1)]' : 'bg-dark-800/50 border-white/10 text-gray-300 opacity-80 cursor-not-allowed'}`}
-                    required />
-                  
+                            className="profile-input max-w-xs mb-1.5 font-semibold"
+                          />
+                        ) : (
+                          <h2 className="text-[1.05rem] sm:text-lg font-semibold text-[var(--text-primary)] truncate">
+                            {user.name}
+                          </h2>
+                        )}
+                        <p className="text-sm text-[var(--text-secondary)] truncate">
+                          {roleLabel}
+                        </p>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
+                          {subtitle}
+                        </p>
                 </div>
-              </motion.div>
-
-              <motion.div layout="position">
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                  {user.role === 'student' ? 'Student ID' : 'Email Address'}
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    {user.role === 'student' ?
-                    <HashIcon
-                      className={`h-4 w-4 ${isEditing && user.role !== 'student' ? 'text-purple-400' : 'text-gray-500'} transition-colors`} /> :
-
-
-                    <MailIcon
-                      className={`h-4 w-4 ${isEditing ? 'text-purple-400' : 'text-gray-500'} transition-colors`} />
-
-                    }
+              </div>
+                    <EditButton
+                      editing={editingCard === 'identity'}
+                      onEdit={() => startEdit('identity')}
+                      onCancel={cancelEdit}
+                    />
                   </div>
-                  <input
-                    type={user.role === 'student' ? 'text' : 'email'}
-                    name={user.role === 'student' ? 'studentId' : 'email'}
-                    value={
-                    user.role === 'student' ?
-                    formData.studentId || '' :
-                    formData.email
-                    }
-                    onChange={handleChange}
-                    disabled={!isEditing || user.role === 'student'} // Student ID usually shouldn't be editable
-                    className={`block w-full pl-10 rounded-xl py-2.5 text-sm transition-all ${isEditing && user.role !== 'student' ? 'bg-dark-800 border-purple-500/50 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 shadow-[0_0_15px_rgba(139,92,246,0.1)]' : 'bg-dark-800/50 border-white/10 text-gray-300 opacity-80 cursor-not-allowed'}`}
-                    required />
-                  
+                  {saveBar(editingCard === 'identity')}
+                </section>
+
+                <section className="profile-card">
+                  <div className="flex items-start justify-between gap-4 mb-6">
+                    <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                      Personal information
+                    </h3>
+                    <EditButton
+                      editing={editingCard === 'personal'}
+                      onEdit={() => startEdit('personal')}
+                      onCancel={cancelEdit}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
+                    <FieldBlock
+                      label="First Name"
+                      name="firstName"
+                      value={
+                        editingCard === 'personal'
+                          ? formData.firstName
+                          : splitName(user.name).firstName
+                      }
+                      editing={editingCard === 'personal'}
+                      onChange={handleChange}
+                    />
+                    <FieldBlock
+                      label="Last Name"
+                      name="lastName"
+                      value={
+                        editingCard === 'personal'
+                          ? formData.lastName
+                          : splitName(user.name).lastName || '—'
+                      }
+                      editing={editingCard === 'personal'}
+                      onChange={handleChange}
+                    />
+                    <FieldBlock
+                      label="Email address"
+                      name="email"
+                      type="email"
+                      value={
+                        editingCard === 'personal' ? formData.email : user.email
+                      }
+                      editing={editingCard === 'personal'}
+                      disabled={user.role === 'student'}
+                      onChange={handleChange}
+                      onCopy={
+                        editingCard === 'personal'
+                          ? undefined
+                          : () => copyValue(user.email)
+                      }
+                    />
+                    <FieldBlock
+                      label="Role"
+                      name="role"
+                      value={roleLabel}
+                      editing={false}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  {saveBar(editingCard === 'personal')}
+                </section>
+
+                <section className="profile-card">
+                  <div className="flex items-start justify-between gap-4 mb-6">
+                    <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                      {user.role === 'student'
+                        ? 'Academic details'
+                        : user.role === 'staff'
+                          ? 'Assignment details'
+                          : 'Account details'}
+                    </h3>
+                    {(user.role === 'student' || user.role === 'staff') && (
+                      <EditButton
+                        editing={editingCard === 'academic'}
+                        onEdit={() => startEdit('academic')}
+                        onCancel={cancelEdit}
+                      />
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
+                    {user.role === 'student' && (
+                      <>
+                        <FieldBlock
+                          label="Student ID"
+                          name="studentId"
+                          value={user.studentId || '—'}
+                          editing={false}
+                          mono
+                          onChange={handleChange}
+                          onCopy={
+                            user.studentId
+                              ? () => copyValue(user.studentId as string)
+                              : undefined
+                          }
+                        />
+                        <FieldBlock
+                          label="Course / Program"
+                          name="course"
+                          value={
+                            editingCard === 'academic'
+                              ? formData.course
+                              : user.course || '—'
+                          }
+                          editing={editingCard === 'academic'}
+                          placeholder="e.g., BSIT, BSCS"
+                          onChange={handleChange}
+                        />
+                        <FieldBlock
+                          label="College"
+                          name="college"
+                          value="College of Information Technology Education"
+                          editing={false}
+                          onChange={handleChange}
+                        />
+                        <FieldBlock
+                          label="Member since"
+                          name="createdAt"
+                          value={
+                            user.createdAt
+                              ? new Date(user.createdAt).toLocaleDateString(undefined, {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })
+                              : '—'
+                          }
+                          editing={false}
+                          onChange={handleChange}
+                        />
+                      </>
+                    )}
+                    {user.role === 'staff' && (
+                      <>
+                        <FieldBlock
+                          label="Assigned department"
+                          name="department"
+                          value={
+                            editingCard === 'academic'
+                              ? formData.department
+                              : user.department || '—'
+                          }
+                          editing={editingCard === 'academic'}
+                          onChange={handleChange}
+                        />
+                        <FieldBlock
+                          label="Member since"
+                          name="createdAt"
+                          value={
+                            user.createdAt
+                              ? new Date(user.createdAt).toLocaleDateString(undefined, {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })
+                              : '—'
+                          }
+                          editing={false}
+                          onChange={handleChange}
+                        />
+                      </>
+                    )}
+                    {user.role === 'admin' && (
+                      <>
+                        <FieldBlock
+                          label="Access level"
+                          name="access"
+                          value="Full administration"
+                          editing={false}
+                          onChange={handleChange}
+                        />
+                        <div className="min-w-0">
+                          <p className="profile-field-label">Status</p>
+                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-400">
+                            <BadgeCheckIcon className="h-4 w-4" />
+                            Active
+                          </span>
                 </div>
-              </motion.div>
-
-              {user.role === 'staff' &&
-              <motion.div layout="position">
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                    Department
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <BuildingIcon
-                      className={`h-4 w-4 ${isEditing ? 'text-purple-400' : 'text-gray-500'} transition-colors`} />
-                    
-                    </div>
-                    <input
-                    type="text"
-                    name="department"
-                    value={formData.department}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className={`block w-full pl-10 rounded-xl py-2.5 text-sm transition-all ${isEditing ? 'bg-dark-800 border-purple-500/50 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 shadow-[0_0_15px_rgba(139,92,246,0.1)]' : 'bg-dark-800/50 border-white/10 text-gray-300 opacity-80 cursor-not-allowed'}`} />
-                  
-                  </div>
-                </motion.div>
-              }
-
-              {user.role === 'student' &&
-              <motion.div layout="position">
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                    Course
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <BookOpenIcon
-                      className={`h-4 w-4 ${isEditing ? 'text-purple-400' : 'text-gray-500'} transition-colors`} />
-                    
-                    </div>
-                    <input
-                    type="text"
-                    name="course"
-                    value={formData.course}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className={`block w-full pl-10 rounded-xl py-2.5 text-sm transition-all ${isEditing ? 'bg-dark-800 border-purple-500/50 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 shadow-[0_0_15px_rgba(139,92,246,0.1)]' : 'bg-dark-800/50 border-white/10 text-gray-300 opacity-80 cursor-not-allowed'}`} />
-                  
-                  </div>
-                </motion.div>
-              }
+                      </>
+              )}
             </div>
+                  {saveBar(editingCard === 'academic')}
+                </section>
+              </motion.div>
+            )}
 
-            <AnimatePresence>
-              {isEditing &&
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  height: 0
-                }}
-                animate={{
-                  opacity: 1,
-                  height: 'auto'
-                }}
-                exit={{
-                  opacity: 0,
-                  height: 0
-                }}
-                className="overflow-hidden">
-                
-                  <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-4 pt-6 flex items-center gap-2">
-                    <LockIcon className="h-5 w-5 text-purple-400" />
-                    Security Settings
-                  </h3>
-
-                  <div className="space-y-4 mt-6">
+            {settingsTab === 'security' && (
+                <motion.div
+                key="security"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
+                className="space-y-4 sm:space-y-5"
+              >
+                <section className="profile-card">
+                  <div className="flex items-start justify-between gap-4 mb-2">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                        Current Password
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <LockIcon className="h-4 w-4 text-purple-400" />
-                        </div>
-                        <input
-                        type="password"
-                        name="currentPassword"
-                        value={formData.currentPassword}
-                        onChange={handleChange}
-                        className="block w-full pl-10 bg-dark-800 border-purple-500/30 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
-                        placeholder="Leave blank to keep current" />
-                      
-                      </div>
+                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                        Password
+                      </h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        Leave blank if you do not want to change your password.
+                      </p>
                     </div>
+                    <EditButton
+                      editing={editingCard === 'security'}
+                      onEdit={() => startEdit('security')}
+                      onCancel={cancelEdit}
+                    />
+                  </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {editingCard === 'security' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6 mt-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                          New Password
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <LockIcon className="h-4 w-4 text-purple-400" />
-                          </div>
-                          <input
+                        <p className="profile-field-label">New password</p>
+                      <div className="relative">
+                          <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
+                        <input
                           type="password"
                           name="newPassword"
                           value={formData.newPassword}
                           onChange={handleChange}
-                          className="block w-full pl-10 bg-dark-800 border-purple-500/30 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
-                          placeholder="••••••••" />
-                        
-                        </div>
+                          placeholder="Min. 6 characters"
+                            className="profile-input pl-9"
+                        />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                          Confirm New Password
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <LockIcon className="h-4 w-4 text-purple-400" />
-                          </div>
-                          <input
+                    </div>
+                    <div>
+                        <p className="profile-field-label">Confirm new password</p>
+                      <div className="relative">
+                          <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
+                        <input
                           type="password"
                           name="confirmPassword"
                           value={formData.confirmPassword}
                           onChange={handleChange}
-                          className="block w-full pl-10 bg-dark-800 border-purple-500/30 rounded-xl py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
-                          placeholder="••••••••" />
-                        
+                          placeholder="Repeat new password"
+                            className="profile-input pl-9"
+                        />
                         </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6 mt-6">
+                      <div>
+                        <p className="profile-field-label">Password</p>
+                        <p className="profile-field-value tracking-[0.28em]">••••••••</p>
+                      </div>
+                      <div>
+                        <p className="profile-field-label">Last updated</p>
+                        <p className="profile-field-value">
+                          {user.updatedAt
+                            ? new Date(user.updatedAt).toLocaleDateString(undefined, {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : '—'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {saveBar(editingCard === 'security')}
+                </section>
 
-                  <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-6 mt-6 border-t border-white/10">
-                    <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-500 transition-colors disabled:opacity-70 shadow-lg shadow-purple-500/25 w-full sm:w-auto justify-center">
-                    
-                      {isLoading ?
-                    <Loader2Icon className="h-4 w-4 animate-spin" /> :
-
-                    <SaveIcon className="h-4 w-4" />
-                    }
-                      Save Changes
-                    </button>
+                <section className="profile-card">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="h-9 w-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center shrink-0">
+                      <MonitorIcon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                        Active session
+                      </h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                        You are signed in on this device.
+                      </p>
+                    </div>
                   </div>
-                </motion.div>
-              }
-            </AnimatePresence>
-          </motion.form>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
+                    <div>
+                      <p className="profile-field-label">Device</p>
+                      <p className="profile-field-value">This browser</p>
+                    </div>
+                    <div>
+                      <p className="profile-field-label">Status</p>
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        Active now
+                      </span>
+                    </div>
+              </div>
+                </section>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Confirmation Modal */}
       <AnimatePresence>
-        {showConfirmModal &&
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark-900/80 backdrop-blur-sm animate-fade-in">
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark-900/80 backdrop-blur-sm animate-fade-in">
             <motion.div
-            initial={{
-              opacity: 0,
-              scale: 0.95,
-              y: 10
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              y: 0
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.95,
-              y: 10
-            }}
-            className="glass-panel w-full max-w-sm p-6 flex flex-col items-center text-center shadow-2xl shadow-purple-500/10 border-purple-500/20">
-            
-              <div className="h-12 w-12 rounded-full bg-purple-500/10 flex items-center justify-center mb-4 border border-purple-500/20 text-purple-400">
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="glass-panel w-full max-w-sm p-6 rounded-2xl flex flex-col items-center text-center shadow-2xl border border-sky-500/20"
+            >
+              <div className="h-12 w-12 rounded-full bg-sky-500/10 flex items-center justify-center mb-4 border border-sky-500/20 text-sky-400">
                 <AlertTriangleIcon className="h-6 w-6" />
               </div>
-
-              <h3 className="text-xl font-bold text-white mb-2">
-                Save Changes?
+              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                Save profile changes?
               </h3>
-              <p className="text-sm text-gray-400 mb-6">
-                Are you sure you want to apply these changes to your profile?
+              <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">
+                Are you sure you want to apply these updates to your account
+                details?
               </p>
-
               <div className="flex w-full gap-3">
                 <button
-                type="button"
-                onClick={handleDiscard}
-                disabled={isLoading}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 text-white font-medium hover:bg-white/5 transition-colors disabled:opacity-50">
-                
-                  No, Discard
+                  type="button"
+                  onClick={handleDiscard}
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 text-[var(--text-primary)] text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+                >
+                  Discard
                 </button>
                 <button
-                type="button"
-                onClick={handleConfirmSave}
-                disabled={isLoading}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 border border-purple-500/50 text-white font-medium hover:bg-purple-500 transition-colors disabled:opacity-70">
-                
-                  {isLoading ?
-                <Loader2Icon className="h-4 w-4 animate-spin" /> :
-
-                <SaveIcon className="h-4 w-4" />
-                }
-                  Yes, Save
+                  type="button"
+                  onClick={handleConfirmSave}
+                  disabled={isLoading}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-sm font-semibold shadow-lg shadow-sky-500/25 transition-all disabled:opacity-70"
+                >
+                  {isLoading ? (
+                    <Loader2Icon className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <SaveIcon className="h-4 w-4" />
+                  )}
+                  Save
                 </button>
               </div>
             </motion.div>
           </div>
-        }
+        )}
       </AnimatePresence>
-    </div>);
-
+    </div>
+  );
 }

@@ -10,14 +10,15 @@ interface AnalyticsChartProps {
 }
 export function AnalyticsChart({ data, type, title }: AnalyticsChartProps) {
   const maxVal = Math.max(...data.map((d) => d.value));
-  // Default colors if not provided
+  // Palette matching Homies Lab (Image 1) and Ultraleads (Image 2)
   const colors = [
-  'bg-purple-500',
-  'bg-blue-500',
-  'bg-cyan-500',
-  'bg-green-500',
-  'bg-orange-500',
-  'bg-red-500'];
+    'bg-emerald-400', // Electric Mint (#00D492)
+    'bg-sky-400',     // Ocean Azure (#0099D8)
+    'bg-blue-500',    // Sapphire Blue (#2563EB)
+    'bg-amber-400',   // Amber Gold (#F59E0B)
+    'bg-rose-400',    // Coral Red (#EF4444)
+    'bg-teal-400'
+  ];
 
   return (
     <div className="glass-panel p-6 h-full flex flex-col">

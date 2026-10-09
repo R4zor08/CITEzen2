@@ -43,18 +43,18 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
             damping: 28,
             stiffness: 350
           }}
-          className="glass-panel w-full sm:max-w-sm p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl shadow-red-500/10 border-red-500/20 rounded-t-2xl sm:rounded-2xl"
+          className="glass-panel w-full sm:max-w-sm p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl border-white/10 dark:border-white/20 rounded-t-2xl sm:rounded-2xl"
           onClick={(e) => e.stopPropagation()}>
           
-            <div className="hidden sm:flex w-12 h-12 rounded-full bg-red-500/10 items-center justify-center mb-4 border border-red-500/20 text-red-400">
+            <div className="hidden sm:flex w-12 h-12 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400 items-center justify-center mb-4 border border-sky-500/25">
               <LogOutIcon className="h-6 w-6" />
             </div>
 
             {/* Mobile drag handle */}
-            <div className="sm:hidden w-10 h-1 rounded-full bg-white/20 mb-5 shrink-0" />
+            <div className="sm:hidden w-10 h-1 rounded-full bg-sky-500/30 mb-5 shrink-0" />
 
             {/* Mobile icon */}
-            <div className="sm:hidden h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 border border-red-500/20 text-red-400">
+            <div className="sm:hidden h-12 w-12 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center mb-4 border border-sky-500/25">
               <LogOutIcon className="h-6 w-6" />
             </div>
 
@@ -75,9 +75,8 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
               </button>
               <button
               onClick={onConfirm}
-              className="flex-1 px-4 py-3 sm:py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-medium hover:bg-red-500/20 hover:text-red-300 active:scale-[0.98] transition-all text-sm sm:text-base">
-              
-                Logout
+              className="btn-logout flex-1 px-4 py-3 sm:py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-lg shadow-red-500/25 border border-red-500/30 active:scale-[0.98] transition-all text-sm sm:text-base">
+                <span className="text-white">Logout</span>
               </button>
             </div>
           </motion.div>

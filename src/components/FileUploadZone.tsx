@@ -241,11 +241,11 @@ function AttachmentThumbnail({ file }: { file: ConcernAttachment }) {
   }
 
   return (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-purple-500/10">
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-sky-500/10">
       {isImage ? (
         <ImageIcon className="h-6 w-6 text-cyan-400/80" />
       ) : (
-        <FileTextIcon className="h-6 w-6 text-purple-400/80" />
+        <FileTextIcon className="h-6 w-6 text-sky-400/80" />
       )}
     </div>
   );
@@ -581,7 +581,7 @@ export function FileUploadZone({
             aria-live="polite">
             <div className="relative">
               <ScanLineIcon className="h-10 w-10 text-cyan-400/90 animate-pulse" />
-              <Loader2Icon className="absolute -right-1 -bottom-1 h-5 w-5 text-purple-400 animate-spin" />
+              <Loader2Icon className="absolute -right-1 -bottom-1 h-5 w-5 text-sky-400 animate-spin" />
             </div>
             <p className="text-sm font-medium text-[var(--text-primary)]">
               Checking if the file is real...
@@ -606,19 +606,19 @@ export function FileUploadZone({
         <div className="flex justify-center px-6 py-6 sm:py-7">
           <div className="space-y-2 text-center pointer-events-none max-w-sm">
             {isProcessing && !requireAuthenticityVerification ? (
-              <Loader2Icon className="mx-auto h-10 w-10 text-purple-400 animate-spin" />
+              <Loader2Icon className="mx-auto h-10 w-10 text-sky-400 animate-spin" />
             ) : (
               <div
                 className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border transition-colors ${
                   requireAuthenticityVerification
                     ? 'border-cyan-500/25 bg-cyan-500/10 group-hover:border-cyan-400/40 group-hover:bg-cyan-500/15'
-                    : 'border-white/10 bg-white/5 group-hover:border-purple-500/40 group-hover:bg-purple-500/10'
+                    : 'border-white/10 bg-white/5 group-hover:border-sky-500/40 group-hover:bg-sky-500/10'
                 }`}>
                 <UploadCloudIcon
                   className={`h-6 w-6 transition-colors ${
                     requireAuthenticityVerification
                       ? 'text-cyan-300/90 group-hover:text-cyan-200'
-                      : 'text-gray-400 group-hover:text-purple-400'
+                      : 'text-gray-400 group-hover:text-sky-400'
                   }`}
                 />
               </div>
@@ -628,7 +628,7 @@ export function FileUploadZone({
                 className={`font-medium ${
                   requireAuthenticityVerification
                     ? 'text-cyan-300 group-hover:text-cyan-200'
-                    : 'text-purple-400 group-hover:text-purple-300'
+                    : 'text-sky-400 group-hover:text-sky-300'
                 }`}>
                 Choose a file
               </span>
