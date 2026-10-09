@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { signAuthToken } from '../middleware/auth.js';
-import { ConflictError, UnauthorizedError } from '../http/httpError.js';
+import { BadRequestError, ConflictError, UnauthorizedError } from '../http/httpError.js';
 import { userToApi } from '../mappers.js';
 import type { Role } from '../types.js';
 import * as users from '../repositories/userRepository.js';
@@ -40,11 +40,19 @@ export async function register(args: {
 
   if (args.role === 'student') {
     if (!args.studentId) {
-      throw new ConflictError('Student ID is required for student accounts.');
+      throw new BadRequestError('Student ID is required for student accounts.');
     }
-    const dup = await users.findUserByStudentId(args.studentId);
-    if (dup) throw new ConflictError('An account with this Student ID already exists.');
-    email = email || `${args.studentId.toLowerCase().replace(/\s+/g, '')}@student.local`;
+    if (!email) {
+      throw new BadRequestError('NEMSU email is required for student accounts.');
+    }
+    email = email.toLowerCase();
+    if (!/^[^\s@]+@nemsu\.edu\.ph$/i.test(email)) {
+      throw new BadRequestError('Use your official NEMSU email (e.g. name@nemsu.edu.ph).');
+    }
+    const dupId = await users.findUserByStudentId(args.studentId);
+    if (dupId) throw new ConflictError('An account with this Student ID already exists.');
+    const dupEmail = await users.findUserByEmail(email);
+    if (dupEmail) throw new ConflictError('An account with this email already exists.');
   } else {
     if (!email) throw new ConflictError('Email is required.');
     email = email.toLowerCase();
