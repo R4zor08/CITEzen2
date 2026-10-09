@@ -28,8 +28,10 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: 1,
     title: 'Create Your Account',
+    quote: 'A must-have for anyone looking to save time and streamline campus concerns.',
     description:
-      'Register using your Student ID and set up your password. Quick and easy — takes less than a minute.',
+      'Register using your Student ID and set up your password in under a minute.',
+    tag: 'STUDENT REGISTRATION',
     icon: UserPlusIcon,
     color: 'sky',
     bgGradient: 'from-sky-500/20 to-blue-600/10',
@@ -40,8 +42,10 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: 2,
     title: 'Log In Securely',
+    quote: 'This tech has completely streamlined our daily tasks and sign-in verification.',
     description:
-      'Sign in with your credentials. Role-based access ensures you see exactly what you need.',
+      'Role-based access ensures students, staff, and admins see exactly what they need.',
+    tag: 'ROLE AUTHENTICATION',
     icon: LogInIcon,
     color: 'cyan',
     bgGradient: 'from-cyan-500/20 to-cyan-600/10',
@@ -52,8 +56,10 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: 3,
     title: 'Access Your Dashboard',
+    quote: 'Real-time dashboard provides complete clarity on all active reports and actions.',
     description:
       'View your personalized dashboard with all your concerns, notifications, and quick actions.',
+    tag: 'SMART DASHBOARD',
     icon: LayoutDashboardIcon,
     color: 'blue',
     bgGradient: 'from-blue-500/20 to-blue-600/10',
@@ -64,8 +70,10 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: 4,
     title: 'Submit a Concern',
+    quote: 'It makes filing requests so much easier. Smart templates eliminate guesswork!',
     description:
-      'Fill out a smart template form tailored to your concern type. Attach files if needed.',
+      'Fill out a smart template form tailored to your concern type with evidence verification.',
+    tag: 'FORM SUBMISSION',
     icon: FileEditIcon,
     color: 'indigo',
     bgGradient: 'from-indigo-500/20 to-indigo-600/10',
@@ -75,9 +83,11 @@ const HOW_IT_WORKS_STEPS = [
   },
   {
     number: 5,
-    title: 'Auto-Routed to Department',
+    title: 'Auto-Routed to Office',
+    quote: 'Fast, reliable routing directly to the right department. Exactly what I needed.',
     description:
-      'Your concern is automatically sent to the right department. No guesswork, no delays.',
+      'Your concern is automatically sent to the right department — no guesswork, no delays.',
+    tag: 'CAMPUS ROUTING',
     icon: SearchIcon,
     color: 'emerald',
     bgGradient: 'from-emerald-500/20 to-emerald-600/10',
@@ -87,15 +97,31 @@ const HOW_IT_WORKS_STEPS = [
   },
   {
     number: 6,
-    title: 'Track & Resolve',
+    title: 'Track Live Progress',
+    quote: "I can't imagine my workflow without it now. Transparent and simply amazing!",
     description:
-      'Monitor real-time status updates and get notified when your concern is resolved.',
+      'Monitor real-time status updates and track review stages with immediate notifications.',
+    tag: 'LIVE RESOLUTION',
     icon: CheckCircle2Icon,
     color: 'teal',
     bgGradient: 'from-teal-500/20 to-teal-600/10',
     iconBg: 'bg-teal-500/15',
     iconColor: 'text-teal-400',
     borderHover: 'hover:border-teal-500/40'
+  },
+  {
+    number: 7,
+    title: 'Official Resolution',
+    quote: 'Service is a game changer! Quick official closures and verified department feedback.',
+    description:
+      'Receive official sign-offs, closure summaries, and service ratings once your issue is resolved.',
+    tag: 'CLOSURE & FEEDBACK',
+    icon: BellRingIcon,
+    color: 'sky',
+    bgGradient: 'from-sky-500/20 to-blue-600/10',
+    iconBg: 'bg-sky-500/15',
+    iconColor: 'text-sky-400',
+    borderHover: 'hover:border-sky-500/40'
   }
 ];
 
@@ -377,18 +403,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
         <section
           id="how-it-works"
-          className="py-16 sm:py-20 lg:py-24 relative overflow-hidden"
+          className="w-full py-16 sm:py-24 relative overflow-hidden px-4 sm:px-6 lg:px-8"
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="text-center mb-8 sm:mb-10 md:mb-12">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-[var(--text-primary)] mb-3 sm:mb-4 tracking-tight">
-                How CITEzen Works
-              </h2>
-              <p className="text-[var(--text-secondary)] max-w-2xl mx-auto text-base sm:text-lg px-2 leading-relaxed">
-                A streamlined process from registration to resolution — in just 6
-                simple steps.
-              </p>
-            </div>
+          <div className="max-w-7xl mx-auto w-full relative z-10">
             <HowItWorksCarousel steps={HOW_IT_WORKS_STEPS} />
           </div>
         </section>
