@@ -2275,6 +2275,7 @@ html.dark .landing-bento-ink {
 }
 .landing-marquee {
   overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
 .landing-marquee-track {
