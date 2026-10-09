@@ -799,8 +799,7 @@ export function AdminDashboard({
                         </div>
                       </div>
                       <span
-                className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium capitalize shrink-0 ${u.role === 'admin' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : u.role === 'staff' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'}`}>
-                
+                className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium capitalize shrink-0 ${u.role === 'admin' ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20' : u.role === 'staff' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20' : 'bg-green-500/10 text-emerald-600 dark:text-green-400 border border-green-500/20'}`}>
                         {u.role}
                       </span>
                     </div>
@@ -881,8 +880,7 @@ export function AdminDashboard({
                           </td>
                           <td className="px-4 sm:px-6 py-3 sm:py-4">
                             <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${u.role === 'admin' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : u.role === 'staff' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'}`}>
-                      
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${u.role === 'admin' ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20' : u.role === 'staff' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20' : 'bg-green-500/10 text-emerald-600 dark:text-green-400 border border-green-500/20'}`}>
                               {u.role}
                             </span>
                           </td>

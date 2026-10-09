@@ -10,7 +10,8 @@ import {
   EyeIcon,
   EyeOffIcon,
   SunIcon,
-  MoonIcon
+  MoonIcon,
+  AlertCircleIcon
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -107,8 +108,13 @@ export function LoginPage({ onLogin, onNavigate }: LoginPageProps) {
 
           <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="p-2.5 sm:p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs sm:text-sm text-red-400 text-center">
-                {error}
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="auth-error flex items-center justify-center gap-2 p-2.5 sm:p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 dark:bg-red-500/15 dark:border-red-500/30 dark:text-red-200 text-xs sm:text-sm text-center font-medium shadow-xs transition-colors"
+              >
+                <AlertCircleIcon className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                <span>{error}</span>
               </div>
             )}
 
