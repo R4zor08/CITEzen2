@@ -45,9 +45,9 @@ export function useAuth() {
       method: 'POST',
       body: JSON.stringify({ identifier, password, role })
     });
-    setUser(u);
-    localStorage.setItem('citezen_user', JSON.stringify(u));
     localStorage.setItem('citezen_token', token);
+    localStorage.setItem('citezen_user', JSON.stringify(u));
+    setUser(u);
     return u;
   };
 
