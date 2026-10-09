@@ -121,12 +121,24 @@ type ConcernLike = {
   updatedAt: Date;
   attachments?: string | null;
   formData?: string | null;
+  aiClassification?: string | null;
+  suggestedStaffId?: string | null;
+  suggestedStaffName?: string | null;
+  adminReviewStatus?: string | null;
+  isConfirmed?: boolean;
   comments: CommentLike[];
 };
 
 export function concernToApi(c: ConcernLike) {
   const anyC = c as any;
   const id = anyC.id ?? (anyC._id ? String(anyC._id) : c.id);
+  const isConfirmed =
+    c.isConfirmed !== undefined
+      ? Boolean(c.isConfirmed)
+      : c.adminReviewStatus === 'confirmed' || Boolean(c.assignedToId);
+  const adminReviewStatus =
+    c.adminReviewStatus ?? (isConfirmed ? 'confirmed' : 'pending');
+
   return {
     id,
     title: c.title,
@@ -143,6 +155,14 @@ export function concernToApi(c: ConcernLike) {
     updatedAt: c.updatedAt.toISOString(),
     attachments: parseAttachments(c.attachments ?? null),
     formData: parseJson<Record<string, unknown> | undefined>(c.formData ?? null, undefined),
+    aiClassification: parseJson<Record<string, unknown> | undefined>(
+      c.aiClassification ?? null,
+      undefined
+    ),
+    suggestedStaffId: c.suggestedStaffId ?? undefined,
+    suggestedStaffName: c.suggestedStaffName ?? undefined,
+    adminReviewStatus,
+    isConfirmed,
     comments: c.comments.map(commentToApi)
   };
 }

@@ -17,3 +17,16 @@ export type AuthUser = {
   studentId?: string;
 };
 
+export type AIClassification = {
+  concernCategory: 'Academic' | 'Administrative' | 'Facility' | 'Complaints' | string;
+  category?: 'Academic' | 'Administrative' | 'Facility' | 'Complaints' | string;
+  department: string;
+  priority: Priority;
+  concernSummary: string;
+  reasoning: string;
+  confidence: number;
+  suggestedStaffId?: string | null;
+  suggestedStaffName?: string | null;
+  subcategory?: string;
+};
+
