@@ -11,16 +11,21 @@ import {
   AlertTriangleIcon,
   BadgeCheckIcon,
   CopyIcon,
-  MonitorIcon
+  MonitorIcon,
+  SunIcon,
+  MoonIcon,
+  CheckIcon,
+  SparklesIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTheme, ThemePreference } from '../hooks/useTheme';
 
 interface ProfileSectionProps {
   user: User;
   onUpdateProfile: (data: Partial<User>) => Promise<void>;
 }
 
-type SettingsTab = 'profile' | 'security';
+type SettingsTab = 'profile' | 'security' | 'theme';
 type EditableCard = 'identity' | 'personal' | 'academic' | 'security' | null;
 
 const ROLE_LABEL: Record<User['role'], string> = {
@@ -128,7 +133,219 @@ function EditButton({
   );
 }
 
+function ThemeSelector() {
+  const { theme, preference, setPreference, systemTheme } = useTheme();
+
+  const handleSelect = (pref: ThemePreference) => {
+    setPreference(pref);
+    if (pref === 'system') {
+      toast.success(`Theme set to System (currently ${systemTheme} mode)`);
+    } else if (pref === 'dark') {
+      toast.success('Dark theme activated');
+    } else {
+      toast.success('Light theme activated');
+    }
+  };
+
+  const options: {
+    id: ThemePreference;
+    label: string;
+    badge?: string;
+    description: string;
+    icon: typeof SunIcon;
+  }[] = [
+    {
+      id: 'light',
+      label: 'Light',
+      description: 'Clean daylight aesthetic with crisp contrast',
+      icon: SunIcon
+    },
+    {
+      id: 'dark',
+      label: 'Dark',
+      description: 'Deep obsidian navy, comfortable in low light',
+      icon: MoonIcon
+    },
+    {
+      id: 'system',
+      label: 'System',
+      badge: 'Auto',
+      description: `Adapts to your device (${systemTheme === 'dark' ? 'currently Dark' : 'currently Light'})`,
+      icon: MonitorIcon
+    }
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        {options.map((opt) => {
+          const isSelected = preference === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => handleSelect(opt.id)}
+              className={`group text-left rounded-xl p-3 sm:p-3.5 border transition-all duration-200 flex flex-col justify-between gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
+                isSelected
+                  ? 'border-sky-500 bg-sky-500/[0.08] shadow-md shadow-sky-500/10 ring-1 ring-sky-500/40'
+                  : 'border-[var(--border-color)] bg-[var(--bg-secondary)] hover:border-sky-500/40 hover:bg-[var(--glass-bg-hover)]'
+              }`}
+              aria-pressed={isSelected}
+            >
+              {/* Visual Mockup Preview */}
+              {opt.id === 'light' && (
+                <div className="relative w-full h-20 rounded-lg overflow-hidden border border-slate-200/90 bg-[#F3F6FA] p-2 flex flex-col justify-between shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    </div>
+                    <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Light
+                    </span>
+                  </div>
+                  <div className="rounded-md bg-white border border-slate-200 p-1.5 shadow-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="h-1.5 w-12 rounded-full bg-sky-500" />
+                      <span className="h-1 w-5 rounded-full bg-slate-300" />
+                    </div>
+                    <span className="block h-1 w-full rounded-full bg-slate-200" />
+                  </div>
+                </div>
+              )}
+
+              {opt.id === 'dark' && (
+                <div className="relative w-full h-20 rounded-lg overflow-hidden border border-white/10 bg-[#0B131F] p-2 flex flex-col justify-between shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    </div>
+                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Dark
+                    </span>
+                  </div>
+                  <div className="rounded-md bg-[#111C2E] border border-white/10 p-1.5 shadow-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="h-1.5 w-12 rounded-full bg-cyan-400" />
+                      <span className="h-1 w-5 rounded-full bg-slate-600" />
+                    </div>
+                    <span className="block h-1 w-full rounded-full bg-slate-700" />
+                  </div>
+                </div>
+              )}
+
+              {opt.id === 'system' && (
+                <div className="relative w-full h-20 rounded-lg overflow-hidden border border-[var(--border-color)] flex shadow-xs">
+                  <div className="w-1/2 h-full bg-[#F3F6FA] p-2 flex flex-col justify-between border-r border-slate-300/40">
+                    <div className="flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                    </div>
+                    <div className="rounded bg-white border border-slate-200 p-1 space-y-1">
+                      <span className="block h-1.5 w-8 rounded-full bg-sky-500" />
+                      <span className="block h-1 w-full rounded-full bg-slate-200" />
+                    </div>
+                  </div>
+                  <div className="w-1/2 h-full bg-[#0B131F] p-2 flex flex-col justify-between">
+                    <div className="flex items-center justify-end">
+                      <span className="text-[8px] font-semibold text-cyan-400 uppercase">
+                        Auto
+                      </span>
+                    </div>
+                    <div className="rounded bg-[#111C2E] border border-white/10 p-1 space-y-1">
+                      <span className="block h-1.5 w-8 rounded-full bg-cyan-400" />
+                      <span className="block h-1 w-full rounded-full bg-slate-700" />
+                    </div>
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="h-5 w-5 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] shadow-md flex items-center justify-center">
+                      <SparklesIcon className="h-2.5 w-2.5 text-sky-400" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Title, Badge & Radio Indicator */}
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className={`h-6 w-6 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                      isSelected
+                        ? 'bg-sky-500 text-white shadow-xs'
+                        : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    <opt.icon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">
+                      {opt.label}
+                    </span>
+                    {opt.badge && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/20">
+                        {opt.badge}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`h-4 w-4 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                    isSelected
+                      ? 'bg-sky-500 text-white shadow-xs shadow-sky-500/40'
+                      : 'border-2 border-[var(--border-color)] group-hover:border-sky-500/40'
+                  }`}
+                >
+                  {isSelected && <CheckIcon className="h-2.5 w-2.5 stroke-[3]" />}
+                </div>
+              </div>
+
+              {/* Subtitle */}
+              <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+                {opt.description}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Dynamic Status Banner */}
+      <div className="p-3 sm:p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)] flex items-start gap-2.5 sm:gap-3">
+        <div className="h-7 w-7 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
+          <SparklesIcon className="h-3.5 w-3.5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-[var(--text-primary)]">
+              Current display mode:
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/20 capitalize">
+              {theme} mode
+            </span>
+            {preference === 'system' && (
+              <span className="text-xs text-[var(--text-muted)]">
+                (Synced with OS: {systemTheme} mode)
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-[var(--text-secondary)] mt-1 leading-relaxed">
+            {preference === 'system'
+              ? `System mode is active. CITEzen is rendering in ${theme} mode to match your device, and will automatically adapt whenever your OS appearance changes.`
+              : preference === 'dark'
+                ? 'Dark mode is locked. The interface remains in high-contrast obsidian dark mode regardless of device settings.'
+                : 'Light mode is locked. The interface remains in clean daylight mode regardless of device settings.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
+  const { systemTheme } = useTheme();
   const [settingsTab, setSettingsTab] = useState<SettingsTab>('profile');
   const [editingCard, setEditingCard] = useState<EditableCard>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -314,7 +531,8 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
 
   const navItems: { id: SettingsTab; label: string }[] = [
     { id: 'profile', label: 'My Profile' },
-    { id: 'security', label: 'Security' }
+    { id: 'security', label: 'Security' },
+    { id: 'theme', label: 'Theme' }
   ];
 
   const saveBar = (visible: boolean) =>
@@ -631,6 +849,20 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
             </div>
                   {saveBar(editingCard === 'academic')}
                 </section>
+
+                <section className="profile-card">
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                        Theme & Appearance
+                      </h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        Choose whether CITEzen displays in light, dark, or syncs with your system.
+                      </p>
+                    </div>
+                  </div>
+                  <ThemeSelector />
+                </section>
               </motion.div>
             )}
 
@@ -741,6 +973,59 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
                       </span>
                     </div>
               </div>
+                </section>
+              </motion.div>
+            )}
+
+            {settingsTab === 'theme' && (
+              <motion.div
+                key="theme"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
+                className="space-y-4 sm:space-y-5"
+              >
+                <section className="profile-card">
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                        Theme Preferences
+                      </h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        Customize your visual experience across CITEzen. Choose between light, dark, or system mode.
+                      </p>
+                    </div>
+                  </div>
+                  <ThemeSelector />
+                </section>
+
+                <section className="profile-card">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="h-9 w-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center shrink-0">
+                      <MonitorIcon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                        Display & Device Sync
+                      </h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                        Your theme preference is saved and applies across all pages on this device.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
+                    <div>
+                      <p className="profile-field-label">System Appearance</p>
+                      <p className="profile-field-value capitalize">Device currently set to {systemTheme} mode</p>
+                    </div>
+                    <div>
+                      <p className="profile-field-label">Header Quick Toggle</p>
+                      <p className="profile-field-value text-xs text-[var(--text-secondary)] font-normal">
+                        Click the sun/moon icon at the top right of your screen anytime to quickly flip modes.
+                      </p>
+                    </div>
+                  </div>
                 </section>
               </motion.div>
             )}
