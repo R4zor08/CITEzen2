@@ -26,6 +26,21 @@ export const registerRequestSchema = z.object({
       message: 'studentId is required for student accounts'
     });
   }
+  if (data.role === 'student') {
+    if (!data.email) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['email'],
+        message: 'NEMSU email is required for student accounts'
+      });
+    } else if (!/^[^\s@]+@nemsu\.edu\.ph$/i.test(data.email.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['email'],
+        message: 'Use your official NEMSU email (e.g. name@nemsu.edu.ph)'
+      });
+    }
+  }
   if ((data.role === 'staff' || data.role === 'admin') && !data.email) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

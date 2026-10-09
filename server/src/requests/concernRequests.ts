@@ -43,9 +43,21 @@ export const updateConcernRequestSchema = z.object({
   status: z.string().optional(),
   priority: prioritySchema.optional(),
   assignedTo: z.union([z.string(), z.null()]).optional(),
-  department: z.string().optional()
+  department: z.string().optional(),
+  category: z.string().optional(),
+  subcategory: z.string().optional(),
+  adminReviewStatus: z.string().optional(),
+  isConfirmed: z.boolean().optional()
 });
 export type UpdateConcernRequest = z.infer<typeof updateConcernRequestSchema>;
+
+export const confirmConcernRequestSchema = z.object({
+  assignedToId: z.string().min(1),
+  department: z.string().optional(),
+  category: z.string().optional(),
+  subcategory: z.string().optional()
+});
+export type ConfirmConcernRequest = z.infer<typeof confirmConcernRequestSchema>;
 
 export const addCommentRequestSchema = z.object({
   content: z.string().min(1),
