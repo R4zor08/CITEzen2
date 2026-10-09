@@ -15,6 +15,11 @@ export type ConcernDoc = {
   department: string;
   attachments?: string | null;
   formData?: string | null;
+  aiClassification?: string | null;
+  suggestedStaffId?: string | null;
+  suggestedStaffName?: string | null;
+  adminReviewStatus?: string;
+  isConfirmed?: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -32,10 +37,22 @@ const ConcernSchema = new Schema<ConcernDoc>(
     assignedToId: { type: String, required: false, default: null, index: true },
     department: { type: String, required: true, index: true },
     attachments: { type: String, required: false, default: null },
-    formData: { type: String, required: false, default: null }
+    formData: { type: String, required: false, default: null },
+    aiClassification: { type: String, required: false, default: null },
+    suggestedStaffId: { type: String, required: false, default: null, index: true },
+    suggestedStaffName: { type: String, required: false, default: null },
+    adminReviewStatus: { type: String, required: false, default: 'pending', index: true },
+    isConfirmed: { type: Boolean, required: false, default: false, index: true }
   },
   { timestamps: true }
 );
+
+ConcernSchema.index({ updatedAt: -1 });
+ConcernSchema.index({ createdAt: -1 });
+ConcernSchema.index({ studentId: 1, updatedAt: -1 });
+ConcernSchema.index({ department: 1, updatedAt: -1 });
+ConcernSchema.index({ assignedToId: 1, updatedAt: -1 });
+ConcernSchema.index({ adminReviewStatus: 1, updatedAt: -1 });
 
 ConcernSchema.set('toJSON', {
   virtuals: true,
