@@ -17,7 +17,8 @@ import {
   SearchIcon,
   FilterIcon,
   UsersIcon,
-  BuildingIcon } from
+  BuildingIcon,
+  SparklesIcon } from
 'lucide-react';
 import { toast } from 'sonner';
 import { apiJson } from '../lib/api';
@@ -44,7 +45,7 @@ function UserListAvatar({
   }
   return (
     <div
-      className={`rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-bold ${className}`}
+      className={`rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 font-bold ${className}`}
       aria-hidden
     >
       {initial}
@@ -72,7 +73,7 @@ export function AdminDashboard({
   );
   const [showAddDeptModal, setShowAddDeptModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState<ConcernStatus | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<ConcernStatus | 'all' | 'pending-review'>('all');
   const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
 
   const fetchUsers = useCallback(async () => {
@@ -123,16 +124,35 @@ export function AdminDashboard({
     );
   }, [localDepartments]);
   const [searchQuery, setSearchQuery] = useState('');
-  const { concerns, updateStatus, addComment, forwardConcern, assignConcern } =
-    concernsData;
+  const {
+    concerns,
+    updateStatus,
+    addComment,
+    forwardConcern,
+    assignConcern,
+    confirmConcern
+  } = concernsData;
   const [assignDraft, setAssignDraft] = useState<Record<string, string>>({});
+  const [deptDraft, setDeptDraft] = useState<Record<string, string>>({});
+  const [categoryDraft, setCategoryDraft] = useState<Record<string, string>>({});
+  const [isConfirming, setIsConfirming] = useState<Record<string, boolean>>({});
+
+  const pendingReviewCount = concerns.filter(
+    (c: any) => c.adminReviewStatus === 'pending' || !c.isConfirmed
+  ).length;
   const filteredConcerns = concerns.filter((c: any) => {
-    const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
+    const matchesStatus =
+      filterStatus === 'all'
+        ? true
+        : filterStatus === 'pending-review'
+        ? c.adminReviewStatus === 'pending' || !c.isConfirmed
+        : c.status === filterStatus;
     const matchesSearch =
-    c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.department.toLowerCase().includes(searchQuery.toLowerCase());
+      (c.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.studentName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.department || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ((c.category || '') && c.category.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
 
@@ -143,11 +163,42 @@ export function AdminDashboard({
   );
   const stats = {
     total: concerns.length,
+    pendingReview: pendingReviewCount,
     resolved: concerns.filter((c: any) => c.status === 'resolved').length,
     urgent: concerns.filter(
       (c: any) => c.priority === 'urgent' || c.priority === 'high'
     ).length,
     users: registeredUsers.filter((u: any) => u.role !== 'admin').length
+  };
+
+  const handleConfirmConcern = async (concern: any) => {
+    const staffId =
+      assignDraft[concern.id] ?? concern.suggestedStaffId ?? (staffUsers[0]?.id || '');
+    if (!staffId) {
+      toast.error('Please select a staff member to assign this concern.');
+      return;
+    }
+    const chosenDept = deptDraft[concern.id] ?? concern.department;
+    const chosenCategory = categoryDraft[concern.id] ?? concern.category;
+
+    setIsConfirming((prev) => ({ ...prev, [concern.id]: true }));
+    try {
+      if (confirmConcern) {
+        await confirmConcern(concern.id, {
+          assignedToId: staffId,
+          department: chosenDept,
+          category: chosenCategory,
+          subcategory: concern.subcategory
+        });
+      } else {
+        await assignConcern(concern.id, staffId);
+      }
+      toast.success('Concern confirmed and forwarded to staff member!');
+    } catch {
+      /* useConcerns already toasts */
+    } finally {
+      setIsConfirming((prev) => ({ ...prev, [concern.id]: false }));
+    }
   };
   // Prepare chart data
   const categoryData = [
@@ -282,6 +333,38 @@ export function AdminDashboard({
             </p>
           </motion.div>
 
+          {stats.pendingReview > 0 && (
+            <motion.div
+              variants={itemVariants}
+              className="admin-review-banner p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-indigo-500/15 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-amber-500/5"
+            >
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                  <SparklesIcon className="h-5 w-5 text-amber-400 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-semibold text-white">
+                    {stats.pendingReview} Concern{stats.pendingReview > 1 ? 's' : ''} Awaiting Admin Confirmation
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-300 mt-0.5">
+                    AI has analyzed and classified new student concerns. Review recommended categories, departments, and staff assignments to confirm routing.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterStatus('pending-review');
+                  setActiveTab('all-concerns');
+                }}
+                className="shrink-0 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-semibold text-xs sm:text-sm transition-all shadow-md active:scale-95 flex items-center gap-1.5 self-start sm:self-center"
+              >
+                <span>Review Queue</span>
+                <span>→</span>
+              </button>
+            </motion.div>
+          )}
+
           <motion.div
           variants={itemVariants}
           className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -290,7 +373,7 @@ export function AdminDashboard({
             title="Total Concerns"
             value={stats.total}
             icon={FileTextIcon}
-            color="purple"
+            color="blue"
             trend={{
               value: 12,
               isPositive: true
@@ -378,6 +461,11 @@ export function AdminDashboard({
                 className="block w-full sm:w-auto pl-9 pr-8 bg-dark-800 border border-white/10 rounded-xl py-2 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all appearance-none">
                 
                   <option value="all">All Statuses</option>
+                  {pendingReviewCount > 0 && (
+                    <option value="pending-review">
+                      ⚡ Needs Confirmation ({pendingReviewCount})
+                    </option>
+                  )}
                   <option value="pending">Pending</option>
                   <option value="in-progress">In Progress</option>
                   <option value="resolved">Resolved</option>
@@ -411,90 +499,235 @@ export function AdminDashboard({
                         />
                       </div>
 
-                      <div className="glass-panel p-3 rounded-2xl border border-white/10 shrink-0 lg:w-[320px]">
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <div className="text-xs font-medium text-gray-300">
-                            Assign to staff
+                      <div className="glass-panel p-3.5 sm:p-4 rounded-2xl border border-white/10 shrink-0 lg:w-[350px] flex flex-col justify-between">
+                        {concern.adminReviewStatus === 'pending' || !concern.isConfirmed ? (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/25">
+                                <SparklesIcon className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
+                                AI Classification
+                              </div>
+                              <span className="text-[10px] font-semibold text-sky-300 bg-sky-500/15 px-2 py-0.5 rounded-full border border-sky-500/25">
+                                AI Confidence: {Math.round(((concern.aiClassification?.confidence ?? 0.88) * 100))}%
+                              </span>
+                            </div>
+
+                            {concern.aiClassification?.reasoning && (
+                              <div className="text-[11px] text-sky-200/95 bg-sky-500/10 p-2.5 rounded-xl border border-sky-500/20 leading-relaxed">
+                                <span className="font-semibold text-sky-300 block mb-0.5">
+                                  AI Reasoning
+                                </span>
+                                {concern.aiClassification.reasoning}
+                              </div>
+                            )}
+
+                            {/* Recommendations summary */}
+                            <div className="grid grid-cols-2 gap-2 text-[11px]">
+                              <div className="bg-white/[0.04] p-2 rounded-xl border border-white/5">
+                                <span className="text-[10px] text-gray-400 block font-medium">Recommended Department</span>
+                                <span className="text-cyan-300 font-semibold truncate block mt-0.5">
+                                  {concern.aiClassification?.department || concern.department}
+                                </span>
+                              </div>
+                              <div className="bg-white/[0.04] p-2 rounded-xl border border-white/5">
+                                <span className="text-[10px] text-gray-400 block font-medium">Recommended Staff</span>
+                                <span className="text-white font-semibold truncate block mt-0.5">
+                                  {concern.suggestedStaffName || 'None recommended'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Category selector */}
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-gray-400 font-medium">Category</label>
+                              <select
+                                value={categoryDraft[concern.id] ?? concern.category}
+                                onChange={(e) =>
+                                  setCategoryDraft((prev) => ({ ...prev, [concern.id]: e.target.value }))
+                                }
+                                className="w-full bg-dark-800 border border-white/10 rounded-xl py-1.5 px-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                              >
+                                {['Academic', 'Administrative', 'Facility', 'Complaints'].map((cat) => (
+                                  <option key={cat} value={cat}>
+                                    {cat}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Department selector */}
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-gray-400 font-medium">Department</label>
+                              <select
+                                value={deptDraft[concern.id] ?? concern.department}
+                                onChange={(e) =>
+                                  setDeptDraft((prev) => ({ ...prev, [concern.id]: e.target.value }))
+                                }
+                                className="w-full bg-dark-800 border border-white/10 rounded-xl py-1.5 px-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                              >
+                                {localDepartments.map((dept) => (
+                                  <option key={dept} value={dept}>
+                                    {dept}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Admin Final Assignment Section */}
+                            <div className="pt-2 border-t border-white/10 space-y-2">
+                              <div className="text-xs font-semibold text-white flex items-center justify-between">
+                                <span>Admin Final Assignment</span>
+                                <span className="text-[10px] text-amber-400">Review & Confirm</span>
+                              </div>
+
+                              {/* Staff assignment selector */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-gray-400 font-medium">Assign to Staff</span>
+                                  {concern.suggestedStaffName && (
+                                    <span className="text-cyan-400 truncate max-w-[150px]">
+                                      Rec: {concern.suggestedStaffName}
+                                    </span>
+                                  )}
+                                </div>
+                                <select
+                                  value={assignDraft[concern.id] ?? concern.suggestedStaffId ?? ''}
+                                  onChange={(e) =>
+                                    setAssignDraft((prev) => ({ ...prev, [concern.id]: e.target.value }))
+                                  }
+                                  className="w-full bg-dark-800 border border-white/10 rounded-xl py-2 px-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                                >
+                                  <option value="">Select staff member…</option>
+                                  {staffUsers
+                                    .filter((u: any) => u.department === (deptDraft[concern.id] ?? concern.department))
+                                    .map((u: any) => (
+                                      <option key={u.id} value={u.id}>
+                                        {u.name} (in dept)
+                                      </option>
+                                    ))}
+                                  {staffUsers.some(
+                                    (u: any) => u.department === (deptDraft[concern.id] ?? concern.department)
+                                  ) ? (
+                                    <option disabled value="__divider__">
+                                      ──────────
+                                    </option>
+                                  ) : null}
+                                  {staffUsers
+                                    .filter((u: any) => u.department !== (deptDraft[concern.id] ?? concern.department))
+                                    .map((u: any) => (
+                                      <option key={u.id} value={u.id}>
+                                        {u.name} ({u.department || 'No dept'})
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
+
+                              <button
+                                type="button"
+                                disabled={isConfirming[concern.id]}
+                                onClick={() => handleConfirmConcern(concern)}
+                                className="w-full mt-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-sky-500/20 transition-all disabled:opacity-50 touch-manipulation active:scale-[0.98]"
+                              >
+                                {isConfirming[concern.id] ? (
+                                  <>
+                                    <div className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                                    <span>Confirming Final Assignment...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2Icon className="h-4 w-4 text-white" />
+                                    <span>Confirm Admin Final Assignment</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
-                          <div className="text-[11px] text-gray-500 truncate">
-                            {concern.assignedTo
-                              ? `Assigned: ${staffNameById.get(concern.assignedTo) || 'Unknown'}`
-                              : 'Unassigned'}
+                        ) : (
+                          /* Confirmed state */
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                                <CheckCircle2Icon className="h-3.5 w-3.5" />
+                                Admin Final Assignment Confirmed
+                              </span>
+                              <span className="text-[11px] text-gray-400 truncate">
+                                {concern.department}
+                              </span>
+                            </div>
+
+                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-1">
+                              <span className="text-[10px] text-gray-500 uppercase tracking-wide font-medium">
+                                Assigned Staff
+                              </span>
+                              <div className="text-xs font-semibold text-white truncate">
+                                {staffNameById.get(concern.assignedTo) || 'Assigned to Staff'}
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[11px] text-gray-400 font-medium">Reassign to staff</label>
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={assignDraft[concern.id] ?? concern.assignedTo ?? ''}
+                                  onChange={(e) =>
+                                    setAssignDraft((prev) => ({
+                                      ...prev,
+                                      [concern.id]: e.target.value
+                                    }))
+                                  }
+                                  className="flex-1 min-w-0 bg-dark-800 border border-white/10 rounded-xl py-1.5 px-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                                >
+                                  <option value="">Select staff…</option>
+                                  {staffUsers.map((u: any) => (
+                                    <option key={u.id} value={u.id}>
+                                      {u.name} ({u.department || 'No dept'})
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const staffId = assignDraft[concern.id];
+                                    if (!staffId) {
+                                      toast.error('Select a staff member first.');
+                                      return;
+                                    }
+                                    try {
+                                      await assignConcern(concern.id, staffId);
+                                      toast.success('Reassigned successfully.');
+                                    } catch {
+                                      /* useConcerns already toasts */
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-medium hover:bg-purple-500 transition-colors"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
+
+                            {concern.assignedTo && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await assignConcern(concern.id, null);
+                                    setAssignDraft((prev) => {
+                                      const next = { ...prev };
+                                      delete next[concern.id];
+                                      return next;
+                                    });
+                                    toast.success('Unassigned.');
+                                  } catch {
+                                    /* useConcerns already toasts */
+                                  }
+                                }}
+                                className="w-full px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 text-xs transition-colors"
+                              >
+                                Clear assignment
+                              </button>
+                            )}
                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={assignDraft[concern.id] ?? concern.assignedTo ?? ''}
-                            onChange={(e) =>
-                              setAssignDraft((prev) => ({
-                                ...prev,
-                                [concern.id]: e.target.value
-                              }))
-                            }
-                            className="flex-1 min-w-0 bg-dark-800 border border-white/10 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all appearance-none"
-                            title="Select staff to assign">
-                            <option value="">Select staff…</option>
-                            {staffUsers
-                              .filter((u: any) => u.department === concern.department)
-                              .map((u: any) => (
-                                <option key={u.id} value={u.id}>
-                                  {u.name}
-                                </option>
-                              ))}
-                            {staffUsers.some((u: any) => u.department === concern.department) ? (
-                              <option disabled value="__divider__">
-                                ──────────
-                              </option>
-                            ) : null}
-                            {staffUsers
-                              .filter((u: any) => u.department !== concern.department)
-                              .map((u: any) => (
-                                <option key={u.id} value={u.id}>
-                                  {u.name} ({u.department || 'No dept'})
-                                </option>
-                              ))}
-                          </select>
-
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              const staffId = assignDraft[concern.id];
-                              if (!staffId) {
-                                toast.error('Select a staff member first.');
-                                return;
-                              }
-                              try {
-                                await assignConcern(concern.id, staffId);
-                                toast.success('Assigned successfully.');
-                              } catch {
-                                /* useConcerns already toasts */
-                              }
-                            }}
-                            className="px-3 py-2 rounded-xl bg-purple-600 text-white text-xs font-medium hover:bg-purple-500 transition-colors">
-                            Assign
-                          </button>
-                        </div>
-
-                        {concern.assignedTo && (
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                await assignConcern(concern.id, null);
-                                setAssignDraft((prev) => {
-                                  const next = { ...prev };
-                                  delete next[concern.id];
-                                  return next;
-                                });
-                                toast.success('Unassigned.');
-                              } catch {
-                                /* useConcerns already toasts */
-                              }
-                            }}
-                            className="mt-2 w-full px-3 py-2 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 text-xs transition-colors">
-                            Clear assignment
-                          </button>
                         )}
                       </div>
                     </div>
@@ -577,8 +810,7 @@ export function AdminDashboard({
                       </span>
                       <button
                 onClick={() => setEditingUser(u)}
-                className="text-purple-400 hover:text-purple-300 font-medium text-xs">
-                
+                className="text-sky-400 hover:text-sky-300 font-medium text-xs">
                         Edit
                       </button>
                     </div>
@@ -660,8 +892,7 @@ export function AdminDashboard({
                           <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
                             <button
                       onClick={() => setEditingUser(u)}
-                      className="text-purple-400 hover:text-purple-300 font-medium text-xs">
-                      
+                      className="text-sky-400 hover:text-sky-300 font-medium text-xs">
                               Edit
                             </button>
                           </td>
@@ -831,8 +1062,7 @@ export function AdminDashboard({
                         duration: 1,
                         ease: 'easeOut'
                       }}
-                      className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full" />
-                    
+                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full" />
                     </div>
                   </div>);
 
@@ -887,6 +1117,19 @@ export function AdminDashboard({
             /* useConcerns already toasts */
           }
         }}
+        onConfirm={async (id, params) => {
+          try {
+            if (confirmConcern) {
+              await confirmConcern(id, params);
+            } else {
+              await assignConcern(id, params.assignedToId);
+            }
+            toast.success('Concern confirmed and forwarded to staff member!');
+          } catch {
+            /* useConcerns already toasts */
+          }
+        }}
+        staffUsers={staffUsers}
         onClose={() => setSelectedConcernId(null)}
       />
 

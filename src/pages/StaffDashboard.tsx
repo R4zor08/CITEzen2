@@ -121,7 +121,11 @@ export function StaffDashboard({
             title="Dept. Concerns"
             value={stats.totalDept}
             icon={InboxIcon}
-            color="purple" />
+            color="blue"
+            trend={{
+              value: 15,
+              isPositive: true
+            }} />
           
             <StatCard
             title="Assigned to You"
@@ -150,8 +154,7 @@ export function StaffDashboard({
               </h2>
               <button
               onClick={() => setActiveTab('assigned')}
-              className="text-xs sm:text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors">
-              
+              className="text-xs sm:text-sm font-medium text-sky-400 hover:text-sky-300 transition-colors">
                 View All
               </button>
             </div>
