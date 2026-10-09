@@ -5,9 +5,21 @@
     <script>
       (function() {
         try {
+          var pref = localStorage.getItem('citezen_theme_preference');
           var userSet = localStorage.getItem('citezen_theme_user_set') === 'true';
-          var stored = userSet ? localStorage.getItem('citezen_theme') : null;
-          if (stored === 'dark') {
+          var resolved = 'light';
+          if (pref === 'system') {
+            var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            resolved = systemDark ? 'dark' : 'light';
+          } else if (pref === 'dark' || pref === 'light') {
+            resolved = pref;
+          } else if (userSet) {
+            var stored = localStorage.getItem('citezen_theme');
+            if (stored === 'dark' || stored === 'light') {
+              resolved = stored;
+            }
+          }
+          if (resolved === 'dark') {
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('light');
           } else {
