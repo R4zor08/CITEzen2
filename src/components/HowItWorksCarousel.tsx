@@ -1,18 +1,65 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon } from 'lucide-react';
 
 export type HowItWorksStep = {
   number: number;
   title: string;
   description: string;
+  quote?: string;
+  tag?: string;
   icon: React.ElementType;
-  borderHover: string;
-  iconBg: string;
-  iconColor: string;
+  bg?: string;
+  borderHover?: string;
+  iconBg?: string;
+  iconColor?: string;
 };
 
-const SWIPE_PX = 48;
+// Signature color palette & default tilt angles directly modeled after the fanned deck UI
+const CARD_THEMES = [
+  {
+    bg: '#f04a3e', // Coral / Red (Card 1)
+    tag: 'REGISTRATION',
+    defaultRotate: -6,
+    defaultY: 6
+  },
+  {
+    bg: '#f97316', // Warm Orange (Card 2)
+    tag: 'SECURE AUTH',
+    defaultRotate: -3.5,
+    defaultY: 2
+  },
+  {
+    bg: '#eab308', // Sunny Yellow (Card 3)
+    tag: 'DASHBOARD',
+    defaultRotate: -1,
+    defaultY: -4
+  },
+  {
+    bg: '#c5cb7b', // Olive / Khaki Lime (Card 4)
+    tag: 'SMART FORM',
+    defaultRotate: 2.5,
+    defaultY: 2
+  },
+  {
+    bg: '#2dd4bf', // Soft Teal / Seafoam (Card 5)
+    tag: 'ROUTING',
+    defaultRotate: -2,
+    defaultY: 4
+  },
+  {
+    bg: '#a3e635', // Electric Lime Green (Card 6 - Elevated)
+    tag: 'RESOLUTION',
+    defaultRotate: 4,
+    defaultY: -6
+  },
+  {
+    bg: '#7dd3fc', // Powder Sky Blue (Card 7)
+    tag: 'CLOSURE',
+    defaultRotate: -1.5,
+    defaultY: 4
+  }
+];
 
 interface HowItWorksCarouselProps {
   steps: HowItWorksStep[];
@@ -20,17 +67,36 @@ interface HowItWorksCarouselProps {
 
 export function HowItWorksCarousel({ steps }: HowItWorksCarouselProps) {
   const len = steps.length;
-  const [[index, direction], setSlide] = useState([0, 0]);
+  // Default to index 5 (the vibrant lime card in front) or index 0
+  const [activeIndex, setActiveIndex] = useState(5);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const touchStartX = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
+  const isScrollingFromCode = useRef(false);
+
+  // Smooth scroll mobile track to given index
+  const scrollMobileTo = (index: number) => {
+    if (!mobileScrollRef.current) return;
+    const container = mobileScrollRef.current;
+    const cardEl = container.children[index] as HTMLElement | undefined;
+    if (cardEl) {
+      isScrollingFromCode.current = true;
+      const scrollLeft =
+        cardEl.offsetLeft - (container.clientWidth - cardEl.clientWidth) / 2;
+      container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
+      setTimeout(() => {
+        isScrollingFromCode.current = false;
+      }, 400);
+    }
+  };
 
   const paginate = useCallback(
     (delta: number) => {
-      setSlide((prev) => {
-        const i = prev[0];
-        const next = (i + delta + len) % len;
-        return [next, delta > 0 ? 1 : -1];
+      setActiveIndex((prev) => {
+        const next = (prev + delta + len) % len;
+        scrollMobileTo(next);
+        return next;
       });
     },
     [len]
@@ -39,155 +105,271 @@ export function HowItWorksCarousel({ steps }: HowItWorksCarouselProps) {
   const goTo = useCallback(
     (target: number) => {
       const next = ((target % len) + len) % len;
-      setSlide(([i]) => {
-        if (next === i) return [i, 0];
-        const forward = (next - i + len) % len;
-        const dir = forward <= len / 2 ? 1 : -1;
-        return [next, dir];
-      });
+      setActiveIndex(next);
+      scrollMobileTo(next);
     },
     [len]
   );
 
+  // Auto-play timer (pauses on hover or manual toggle)
   useEffect(() => {
-    if (isPaused) return;
-    const t = setInterval(() => paginate(1), 5200);
-    return () => clearInterval(t);
-  }, [isPaused, paginate]);
+    if (isPaused || hoveredIndex !== null) return;
+    const timer = setInterval(() => {
+      paginate(1);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [isPaused, hoveredIndex, paginate]);
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.targetTouches[0].clientX;
+  // Sync mobile scroll events back to activeIndex
+  const handleMobileScroll = () => {
+    if (isScrollingFromCode.current || !mobileScrollRef.current) return;
+    const container = mobileScrollRef.current;
+    const center = container.scrollLeft + container.clientWidth / 2;
+    let closestIndex = 0;
+    let minDiff = Infinity;
+    Array.from(container.children).forEach((child, idx) => {
+      const el = child as HTMLElement;
+      const childCenter = el.offsetLeft + el.clientWidth / 2;
+      const diff = Math.abs(center - childCenter);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIndex = idx;
+      }
+    });
+    if (closestIndex !== activeIndex) {
+      setActiveIndex(closestIndex);
+    }
   };
 
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current == null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (dx < -SWIPE_PX) paginate(1);
-    else if (dx > SWIPE_PX) paginate(-1);
+  // Handle keyboard arrow navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') paginate(-1);
+    if (e.key === 'ArrowRight') paginate(1);
   };
-
-  const variants = {
-    enter: (dir: number) => ({
-      x: reduceMotion ? 0 : dir > 0 ? '100%' : '-100%',
-      opacity: reduceMotion ? 1 : 0
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1
-    },
-    exit: (dir: number) => ({
-      zIndex: 0,
-      x: reduceMotion ? 0 : dir < 0 ? '100%' : '-100%',
-      opacity: reduceMotion ? 1 : 0
-    })
-  };
-
-  const s = steps[index];
-  const StepIcon = s.icon;
 
   return (
     <div
-      className="relative max-w-4xl mx-auto select-none px-0 sm:px-0"
+      className="relative w-full select-none"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}>
-      {/* Mobile: shorter card; sm+: current larger layout */}
-      <div className="relative min-h-[200px] max-h-[min(52vh,320px)] sm:max-h-none sm:min-h-[280px] md:min-h-[320px] lg:min-h-[340px] overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl touch-pan-y mx-auto max-w-[min(100%,20rem)] sm:max-w-none">
-        <AnimatePresence initial={false} custom={direction} mode="wait">
-          <motion.div
-            key={index}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: 'spring', stiffness: 340, damping: 36 },
-              opacity: { duration: reduceMotion ? 0 : 0.22 }
-            }}
-            className={`absolute inset-0 glass-panel border border-[var(--border-color)] shadow-lg sm:shadow-xl ${s.borderHover}`}>
-            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-center gap-3 sm:gap-8 md:gap-10 p-3.5 sm:p-8 md:p-10 lg:p-12 h-full overflow-y-auto custom-scrollbar">
-              <div className="flex flex-row sm:flex-col items-center gap-3 sm:gap-0 shrink-0">
-                <div
-                  className={`relative w-12 h-12 sm:w-24 sm:h-24 md:w-[6.5rem] md:h-[6.5rem] rounded-xl sm:rounded-2xl ${s.iconBg} flex items-center justify-center border border-[var(--border-color)] shadow-md sm:shadow-lg`}>
-                  <StepIcon
-                    className={`h-6 w-6 sm:h-11 sm:w-11 md:h-14 md:w-14 ${s.iconColor}`}
-                    strokeWidth={1.75}
-                  />
-                  <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 h-6 w-6 sm:h-9 sm:w-9 rounded-full bg-gradient-to-br from-blue-600 to-sky-600 flex items-center justify-center text-[10px] sm:text-sm font-bold text-white shadow-md sm:shadow-lg shadow-sky-500/35 border-2 border-[var(--bg-secondary)]">
-                    {s.number}
-                  </div>
-                </div>
-                <p className="sm:mt-3 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] whitespace-nowrap">
-                  Step {s.number}/{len}
-                </p>
-              </div>
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="region"
+      aria-label="How CITEzen Works Carousel">
+      
+      {/* Top Header Row (Integrates natively with the page) */}
+      <div className="relative z-20 flex flex-col sm:flex-row sm:items-end justify-between gap-5 sm:gap-6 mb-6 sm:mb-10 lg:mb-12">
+        <div>
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-[var(--glass-bg)] text-[var(--landing-accent)] border border-[var(--border-color)] mb-3">
+            How CITEzen Works
+          </span>
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
+            They say it better
+            <br className="hidden sm:inline" />
+            <span className="text-[var(--text-secondary)]"> than we do</span>
+          </h2>
+          <p className="text-[var(--text-secondary)] text-xs sm:text-base mt-2 max-w-xl leading-relaxed">
+            Every student concern moves through an automated pipeline from registration to verified resolution.
+          </p>
+        </div>
 
-              <div className="text-center sm:text-left flex-1 min-w-0 flex flex-col justify-center pb-0.5 sm:pb-1">
-                <h3 className="text-base sm:text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-1.5 sm:mb-4 leading-snug sm:leading-tight tracking-tight">
-                  {s.title}
-                </h3>
-                <p className="text-[var(--text-secondary)] text-xs sm:text-base md:text-lg leading-relaxed max-w-xl mx-auto sm:mx-0">
-                  {s.description}
-                </p>
-                <p className="mt-2 sm:mt-4 text-[10px] sm:text-xs text-[var(--text-muted)] md:hidden">
-                  Swipe to see more
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+        {/* Navigation Controls */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-start sm:self-auto">
+          {/* Step Counter Pill */}
+          <div className="flex items-center px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-wider text-[var(--text-primary)] bg-[var(--glass-bg)] border border-[var(--border-color)] backdrop-blur-md">
+            STEP 0{activeIndex + 1} / 0{len}
+          </div>
 
-      <div className="flex flex-col items-center gap-3 sm:gap-5 mt-4 sm:mt-8 max-w-[min(100%,20rem)] sm:max-w-none mx-auto">
-        <div className="flex items-center justify-center gap-2 sm:gap-5 w-full">
+          {/* Auto-play pause/resume toggle */}
+          <button
+            type="button"
+            onClick={() => setIsPaused((prev) => !prev)}
+            className="h-9 w-9 sm:h-11 sm:w-11 rounded-full border border-[var(--border-color)] bg-[var(--glass-bg)] hover:bg-[var(--glass-bg-hover)] text-[var(--text-primary)] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm"
+            title={isPaused ? 'Resume auto-cycle' : 'Pause auto-cycle'}
+            aria-label={isPaused ? 'Resume auto-cycle' : 'Pause auto-cycle'}>
+            {isPaused ? <PlayIcon className="h-4 w-4" /> : <PauseIcon className="h-4 w-4" />}
+          </button>
+
+          {/* Prev Button */}
           <button
             type="button"
             onClick={() => paginate(-1)}
-            className="min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center rounded-xl sm:rounded-2xl bg-[var(--bg-tertiary)] border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)] active:scale-95 transition-all shadow-sm sm:shadow-md touch-manipulation"
+            className="h-9 w-9 sm:h-11 sm:w-11 rounded-full border border-[var(--border-color)] bg-[var(--glass-bg)] hover:bg-[var(--glass-bg-hover)] text-[var(--text-primary)] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm"
+            title="Previous step"
             aria-label="Previous step">
-            <ChevronLeftIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+            <ChevronLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
 
-          <div
-            className="flex flex-1 sm:flex-initial items-center justify-center gap-1.5 sm:gap-2.5 px-0.5 overflow-x-auto scrollbar-hide max-w-[min(100%,200px)] sm:max-w-none py-0.5 sm:py-1"
-            role="tablist"
-            aria-label="Carousel pagination">
-            {steps.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                role="tab"
-                aria-selected={i === index}
-                aria-label={`Go to step ${i + 1}`}
-                onClick={() => goTo(i)}
-                className={`shrink-0 touch-manipulation rounded-full transition-all duration-300 flex items-center justify-center ${i === index ? 'h-2 w-7 sm:h-2.5 sm:w-10 bg-sky-500 shadow-sm sm:shadow-md shadow-sky-500/35' : 'h-1.5 w-1.5 sm:h-2.5 sm:w-2.5 bg-[var(--text-muted)]/35 hover:bg-[var(--text-muted)]/60 active:scale-110'}`}
-              />
-            ))}
-          </div>
-
+          {/* Next Button */}
           <button
             type="button"
             onClick={() => paginate(1)}
-            className="min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center rounded-xl sm:rounded-2xl bg-[var(--bg-tertiary)] border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)] active:scale-95 transition-all shadow-sm sm:shadow-md touch-manipulation"
+            className="h-9 w-9 sm:h-11 sm:w-11 rounded-full border border-[var(--border-color)] bg-[var(--glass-bg)] hover:bg-[var(--glass-bg-hover)] text-[var(--text-primary)] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm"
+            title="Next step"
             aria-label="Next step">
-            <ChevronRightIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+            <ChevronRightIcon className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </div>
+      </div>
 
-        <div className="w-full max-w-[16rem] sm:max-w-md px-0.5">
-          <div className="h-1 sm:h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
-              initial={false}
-              animate={{ width: `${((index + 1) / len) * 100}%` }}
-              transition={{ type: 'spring', stiffness: 200, damping: 28 }}
-            />
-          </div>
+      {/* =========================================================================
+          DESKTOP VIEW (lg+): Fanned, overlapping deck of colorful cards across page
+         ========================================================================= */}
+      <div className="hidden lg:flex relative justify-center items-center py-6 xl:py-10 min-h-[350px] xl:min-h-[400px] overflow-visible">
+        <div className="flex items-center justify-center w-full max-w-7xl px-2">
+          {steps.map((step, i) => {
+            const theme = CARD_THEMES[i % CARD_THEMES.length];
+            const cardBg = step.bg || theme.bg;
+            const isSelected = activeIndex === i;
+            const isHovered = hoveredIndex === i;
+            const isFocused = isSelected || isHovered;
+
+            // Calculate z-index: hovered or selected is on top (40-50), otherwise base stack order
+            const zIndex = isHovered ? 50 : isSelected ? 40 : 10 + i;
+
+            // Calculate transform
+            const rotate = reduceMotion ? 0 : isFocused ? 0 : theme.defaultRotate;
+            const translateY = reduceMotion ? 0 : isFocused ? -24 : theme.defaultY;
+            const scale = isFocused ? 1.06 : 1;
+
+            const StepIcon = step.icon;
+            const rawQuote = step.quote || step.description;
+            const quoteText = rawQuote.replace(/^["“”]|["“”]$/g, '');
+            const tagText = step.tag || theme.tag;
+
+            return (
+              <motion.div
+                key={step.number}
+                onClick={() => goTo(i)}
+                onMouseEnter={() => setHoveredIndex(i)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                style={{
+                  zIndex,
+                  backgroundColor: cardBg
+                }}
+                animate={{
+                  rotate,
+                  y: translateY,
+                  scale,
+                  boxShadow: isFocused
+                    ? '0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 2px rgba(255, 255, 255, 0.4)'
+                    : '0 10px 25px -5px rgba(0, 0, 0, 0.45)'
+                }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 380,
+                  damping: 28
+                }}
+                className={`relative cursor-pointer shrink-0 lg:w-[172px] xl:w-[200px] 2xl:w-[225px] lg:h-[265px] xl:h-[305px] 2xl:h-[335px] rounded-2xl xl:rounded-3xl p-4.5 xl:p-6 flex flex-col justify-between transition-colors duration-200 select-none ${
+                  i > 0 ? 'lg:-ml-9 xl:-ml-12 2xl:-ml-15' : ''
+                }`}
+                role="button"
+                aria-pressed={isSelected}
+                aria-label={`Step ${step.number}: ${step.title}`}>
+                
+                {/* Top Quote (clean, breathing room just like reference photo) */}
+                <div className="flex flex-col">
+                  <p className="text-slate-950 font-extrabold text-sm xl:text-base 2xl:text-lg leading-snug tracking-tight">
+                    "{quoteText}"
+                  </p>
+                </div>
+
+                {/* Empty Space matching reference photo */}
+                <div className="flex-1 min-h-[24px]" />
+
+                {/* Bottom Metadata & Icon Badge */}
+                <div className="mt-auto">
+                  {/* Subtle Divider (matching reference photo) */}
+                  <div className="border-t border-black/15 my-2.5 xl:my-3" />
+
+                  <div className="flex items-center gap-2.5 xl:gap-3">
+                    <div className="h-8 w-8 xl:h-9 xl:w-9 rounded-xl bg-white/85 shadow-sm border border-black/10 flex items-center justify-center shrink-0 text-slate-950">
+                      <StepIcon className="h-4 w-4 xl:h-5 xl:w-5" strokeWidth={2.2} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs xl:text-sm text-slate-950 truncate leading-tight">
+                        {step.title}
+                      </p>
+                      <p className="text-[8.5px] xl:text-[10px] font-bold tracking-wider uppercase text-slate-800/80 truncate leading-tight mt-0.5">
+                        {tagText}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
+      </div>
+
+      {/* =========================================================================
+          MOBILE & TABLET VIEW (< lg): Horizontal touch snap scroll
+         ========================================================================= */}
+      <div className="lg:hidden">
+        <div
+          ref={mobileScrollRef}
+          onScroll={handleMobileScroll}
+          className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory py-4 px-3 sm:px-4 scrollbar-hide -mx-3 sm:-mx-4 touch-pan-x">
+          {steps.map((step, i) => {
+            const theme = CARD_THEMES[i % CARD_THEMES.length];
+            const cardBg = step.bg || theme.bg;
+            const isSelected = activeIndex === i;
+            const StepIcon = step.icon;
+            const rawQuote = step.quote || step.description;
+            const quoteText = rawQuote.replace(/^["“”]|["“”]$/g, '');
+            const tagText = step.tag || theme.tag;
+
+            return (
+              <div
+                key={step.number}
+                onClick={() => goTo(i)}
+                style={{ backgroundColor: cardBg }}
+                className={`snap-center shrink-0 w-[78vw] sm:w-[320px] max-w-[340px] h-[270px] sm:h-[290px] rounded-2xl p-5 flex flex-col justify-between shadow-xl transition-all duration-200 active:scale-95 cursor-pointer ${
+                  isSelected ? 'ring-2 ring-white/60 scale-[1.01]' : 'opacity-90'
+                }`}>
+                <div className="flex flex-col">
+                  <p className="text-slate-950 font-extrabold text-sm sm:text-base leading-snug tracking-tight">
+                    "{quoteText}"
+                  </p>
+                </div>
+
+                <div className="mt-auto">
+                  <div className="border-t border-black/15 my-3" />
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-white/85 shadow-sm border border-black/10 flex items-center justify-center shrink-0 text-slate-950">
+                      <StepIcon className="h-4 w-4" strokeWidth={2.2} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs sm:text-sm text-slate-950 truncate">
+                        {step.title}
+                      </p>
+                      <p className="text-[10px] font-bold tracking-wider uppercase text-slate-800/80 truncate">
+                        {tagText}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bottom Pagination Dots */}
+      <div className="flex items-center justify-center gap-2 mt-4 sm:mt-6">
+        {steps.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => goTo(i)}
+            className={`rounded-full transition-all duration-300 ${
+              i === activeIndex
+                ? 'w-7 sm:w-8 h-2 sm:h-2.5 bg-[var(--text-primary)] shadow-md'
+                : 'w-2 sm:w-2.5 h-2 sm:h-2.5 bg-[var(--text-muted)]/35 hover:bg-[var(--text-muted)]/60'
+            }`}
+            aria-label={`Jump to step ${i + 1}`}
+          />
+        ))}
       </div>
     </div>
   );

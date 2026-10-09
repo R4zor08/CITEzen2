@@ -190,6 +190,22 @@ export function Navbar({
             {user.role} Dashboard
           </h1>
         </div>
+
+        {/* Right: Theme Toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="rounded-xl p-2 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label="Toggle theme">
+            {isDark ? (
+              <SunIcon className="h-5 w-5" />
+            ) : (
+              <MoonIcon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </div>
     </nav>);
 
