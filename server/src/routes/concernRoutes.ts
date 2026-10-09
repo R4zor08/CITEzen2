@@ -10,7 +10,8 @@ import {
   verifyAttachmentRequestSchema,
   forwardConcernRequestSchema,
   listConcernsQuerySchema,
-  updateConcernRequestSchema
+  updateConcernRequestSchema,
+  confirmConcernRequestSchema
 } from '../requests/concernRequests.js';
 
 export function concernRoutes() {
@@ -42,6 +43,14 @@ export function concernRoutes() {
     requireRoles('student'),
     validateBody(createConcernRequestSchema),
     controller.createConcern
+  );
+  router.post(
+    '/api/concerns/:id/confirm',
+    requireAuth,
+    requireRoles('admin'),
+    validateParams(concernIdParamSchema),
+    validateBody(confirmConcernRequestSchema),
+    controller.confirmConcern
   );
   router.patch(
     '/api/concerns/:id',
