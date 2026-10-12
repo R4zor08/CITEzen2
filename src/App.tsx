@@ -38,14 +38,25 @@ export function App() {
   const concernsData = useConcerns(user);
   const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [gabAiFromHash, setGabAiFromHash] = useState(isGabAiHash);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // Enforce 3-second minimum loading screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const onHashChange = () => setGabAiFromHash(isGabAiHash());
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
+
   // Handle routing based on auth state
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !isInitialLoading) {
       if (isAuthenticated && user) {
         // If logged in but on a public page, redirect to dashboard
         if (['landing', 'login', 'register'].includes(currentPage)) {
@@ -61,7 +72,8 @@ export function App() {
         }
       }
     }
-  }, [isAuthenticated, user, isLoading, currentPage]);
+  }, [isAuthenticated, user, isLoading, isInitialLoading, currentPage]);
+
   const handleNavigate = (page: string) => {
     setCurrentPage(page as Page);
     window.scrollTo({
@@ -69,28 +81,42 @@ export function App() {
       behavior: 'smooth'
     });
   };
+
   const handleLogout = () => {
     logout();
     handleNavigate('landing');
   };
+
   const handleUpdateUser = async (data: Partial<User>) => {
     await updateUser(data);
   };
-  if (isLoading) {
+
+  if (isLoading || isInitialLoading) {
     return (
-      <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center text-white">
-        <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10 mb-6 animate-pulse">
+      <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center text-white select-none">
+        <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 via-purple-500/10 to-cyan-500/20 border border-white/10 mb-6 shadow-2xl shadow-sky-500/10 animate-pulse">
           <img
             src="/citezen.png?v=2"
             alt="CITEzen Logo"
-            className="h-20 w-20 object-cover rounded-full" />
+            className="h-24 w-24 object-cover rounded-full"
+          />
         </div>
-        <Loader2Icon className="h-8 w-8 text-sky-400 animate-spin" />
-        <p className="mt-4 text-gray-400 font-medium tracking-widest uppercase text-sm">
-          Loading CITEzen...
-        </p>
-      </div>);
-
+        <div className="flex items-center gap-2.5">
+          <Loader2Icon className="h-5 w-5 text-sky-400 animate-spin" />
+          <p className="text-gray-300 font-semibold tracking-widest uppercase text-sm">
+            Loading CITEzen...
+          </p>
+        </div>
+        <div className="w-48 h-1 bg-white/10 rounded-full mt-5 overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-sky-500 via-cyan-400 to-sky-400 rounded-full"
+            style={{
+              animation: 'loadingProgress 3s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+            }}
+          />
+        </div>
+      </div>
+    );
   }
 
   const toaster = (

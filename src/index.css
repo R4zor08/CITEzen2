@@ -209,7 +209,7 @@
   }
   .nav-tab-active .nav-tab-icon-active,
   .nav-tab-active svg,
-  .nav-tab-active span {
+  .nav-tab-active span:not(.sidebar-notification-badge) {
     color: #0B131F !important;
   }
   .nav-tab-inactive {
@@ -230,7 +230,7 @@
   }
   .light .nav-tab-active .nav-tab-icon-active,
   .light .nav-tab-active svg,
-  .light .nav-tab-active span {
+  .light .nav-tab-active span:not(.sidebar-notification-badge) {
     color: #FFFFFF !important;
   }
   .light .nav-tab-inactive {
@@ -239,6 +239,33 @@
   .light .nav-tab-inactive:hover {
     color: #0D1F36 !important;
     background: rgba(15, 56, 104, 0.05) !important;
+  }
+
+  /* Sidebar notification badge in light and dark mode */
+  .sidebar-notification-badge {
+    font-weight: 700 !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  }
+  .light .nav-tab-active .sidebar-notification-badge {
+    background: #0099D8 !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+  }
+  .nav-tab-active .sidebar-notification-badge {
+    background: #0B131F !important;
+    color: #00D492 !important;
+    border-color: rgba(0, 212, 146, 0.35) !important;
+  }
+  .light .nav-tab-inactive .sidebar-notification-badge {
+    background: #E0F2FE !important;
+    color: #0369A1 !important;
+    border-color: #BAE6FD !important;
+  }
+  .nav-tab-inactive .sidebar-notification-badge {
+    background: rgba(0, 212, 146, 0.15) !important;
+    color: #00D492 !important;
+    border-color: rgba(0, 212, 146, 0.3) !important;
   }
 
   /* Hero Card (Image 2 - Ultraleads: Total Sales inverted card) */
@@ -1320,6 +1347,69 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 153, 216, 0.15) !important;
 }
 
+/* Staff Dashboard controls in light mode */
+.light .dashboard-hero-btn-secondary {
+  background: #FFFFFF !important;
+  color: #0D1F36 !important;
+  border-color: rgba(15, 56, 104, 0.16) !important;
+  box-shadow: 0 1px 3px rgba(15, 56, 104, 0.05) !important;
+}
+.light .dashboard-hero-btn-secondary:hover {
+  background: #F8FAFC !important;
+  border-color: #0099D8 !important;
+  color: #0099D8 !important;
+}
+.light .concern-forward-btn {
+  background: #FFFFFF !important;
+  color: #0D1F36 !important;
+  border-color: rgba(15, 56, 104, 0.15) !important;
+}
+.light .concern-forward-btn:hover {
+  background: #F0F7FD !important;
+  border-color: #0099D8 !important;
+  color: #0099D8 !important;
+}
+.light .concern-status-menu {
+  background: #FFFFFF !important;
+  border-color: rgba(15, 56, 104, 0.12) !important;
+  box-shadow: 0 12px 36px -4px rgba(15, 56, 104, 0.14) !important;
+}
+.light .concern-status-menu button:hover {
+  background: #F1F5F9 !important;
+}
+/* Dashboard Navbar in light and dark mode */
+.light .dashboard-navbar {
+  background: #FFFFFF !important;
+  border-bottom-color: rgba(15, 56, 104, 0.08) !important;
+}
+.dashboard-navbar {
+  background: #0B131F;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.light .notification-panel {
+  background: #FFFFFF !important;
+  border-color: rgba(15, 56, 104, 0.08) !important;
+}
+.light .notification-panel-header {
+  background: #FFFFFF !important;
+  border-bottom-color: rgba(15, 56, 104, 0.08) !important;
+}
+.light .notification-row--read {
+  background: #FFFFFF !important;
+  border-color: rgba(15, 56, 104, 0.08) !important;
+}
+.light .notification-row--read:hover {
+  background: #F8FAFC !important;
+}
+.light .notification-row--unread {
+  background: #F0F7FD !important;
+  border-color: rgba(0, 153, 216, 0.25) !important;
+}
+.light .notification-row--unread:hover {
+  background: #E5F2FB !important;
+}
+
 /* Borders */
 .light .border-white\/5 { border-color: rgba(15, 56, 104, 0.05) !important; }
 .light .border-white\/10 { border-color: rgba(15, 56, 104, 0.08) !important; }
@@ -1403,8 +1493,10 @@ body {
   box-shadow: 0 8px 24px -2px rgba(15, 56, 104, 0.1) !important;
 }
 /* Modal overlays: stronger backdrop */
-.light .backdrop-blur-sm,
-.light .backdrop-blur-md {
+.light .fixed.inset-0.backdrop-blur-sm,
+.light .fixed.inset-0.backdrop-blur-md,
+.light .absolute.inset-0.backdrop-blur-sm,
+.light .absolute.inset-0.backdrop-blur-md {
   background: rgba(15, 56, 104, 0.45) !important;
 }
 /* Sidebar desktop panel */
@@ -2350,3 +2442,9 @@ html.dark .landing-bento-ink {
   vertical-align: middle;
   margin: 0 0.15em 0.12em;
 }
+
+@keyframes loadingProgress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
