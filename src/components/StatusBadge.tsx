@@ -13,26 +13,26 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   const config = {
     pending: {
-      color: 'text-amber-400',
-      bg: 'bg-amber-500/15 border-amber-500/25',
+      color: 'text-amber-700 dark:text-amber-400',
+      bg: 'bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-500/25',
       icon: ClockIcon,
       label: 'Pending'
     },
     'in-progress': {
-      color: 'text-sky-400',
-      bg: 'bg-sky-500/15 border-sky-500/25',
+      color: 'text-sky-700 dark:text-sky-400',
+      bg: 'bg-sky-50 dark:bg-sky-500/15 border-sky-200 dark:border-sky-500/25',
       icon: AlertCircleIcon,
       label: 'In Progress'
     },
     resolved: {
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/15 border-emerald-500/25',
+      color: 'text-emerald-700 dark:text-emerald-400',
+      bg: 'bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/25',
       icon: CheckCircle2Icon,
       label: 'Resolved'
     },
     rejected: {
-      color: 'text-rose-400',
-      bg: 'bg-rose-500/15 border-rose-500/25',
+      color: 'text-rose-700 dark:text-rose-400',
+      bg: 'bg-rose-50 dark:bg-rose-500/15 border-rose-200 dark:border-rose-500/25',
       icon: XCircleIcon,
       label: 'Rejected'
     }
@@ -59,23 +59,23 @@ interface PriorityBadgeProps {
 export function PriorityBadge({ priority, size = 'md' }: PriorityBadgeProps) {
   const config = {
     low: {
-      color: 'text-gray-400',
-      bg: 'bg-gray-400/10 border-gray-400/20',
+      color: 'text-slate-600 dark:text-gray-400',
+      bg: 'bg-slate-100 dark:bg-gray-400/10 border-slate-200 dark:border-gray-400/20',
       showIcon: false
     },
     medium: {
-      color: 'text-sky-400',
-      bg: 'bg-sky-500/15 border-sky-500/25',
+      color: 'text-sky-700 dark:text-sky-400',
+      bg: 'bg-sky-50 dark:bg-sky-500/15 border-sky-200 dark:border-sky-500/25',
       showIcon: false
     },
     high: {
-      color: 'text-amber-400',
-      bg: 'bg-amber-500/15 border-amber-500/25',
+      color: 'text-amber-700 dark:text-amber-400',
+      bg: 'bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-500/25',
       showIcon: false
     },
     urgent: {
-      color: 'text-rose-400',
-      bg: 'bg-rose-500/15 border-rose-500/25',
+      color: 'text-rose-700 dark:text-rose-400',
+      bg: 'bg-rose-50 dark:bg-rose-500/15 border-rose-200 dark:border-rose-500/25',
       showIcon: true
     }
   };

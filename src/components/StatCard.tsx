@@ -28,11 +28,11 @@ export function StatCard({
   subtitle
 }: StatCardProps) {
   const colorConfig = {
-    purple: 'text-cyan-400 bg-cyan-500/15 border-cyan-500/25',
-    blue: 'text-sky-400 bg-sky-500/15 border-sky-500/25',
-    green: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/25',
-    orange: 'text-amber-400 bg-amber-500/15 border-amber-500/25',
-    red: 'text-rose-400 bg-rose-500/15 border-rose-500/25'
+    purple: 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/15 border-cyan-200 dark:border-cyan-500/25',
+    blue: 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/15 border-sky-200 dark:border-sky-500/25',
+    green: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/25',
+    orange: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-500/25',
+    red: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/15 border-rose-200 dark:border-rose-500/25'
   };
 
   const selectedColor = colorConfig[color];
@@ -68,7 +68,7 @@ export function StatCard({
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
-      className={`stat-card glass-card p-4 sm:p-5 flex flex-col justify-between rounded-2xl border border-white/10 transition-all ${
+      className={`stat-card glass-card p-4 sm:p-5 flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-white/10 transition-all ${
         isHero ? 'hero-card' : ''
       } ${
         onClick
@@ -78,7 +78,7 @@ export function StatCard({
     >
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="stat-title text-xs sm:text-sm font-semibold text-gray-400 truncate pr-2 group-hover:text-gray-200 transition-colors">
+          <h3 className="stat-title text-xs sm:text-sm font-semibold text-slate-500 dark:text-gray-400 truncate pr-2 group-hover:text-slate-700 dark:group-hover:text-gray-200 transition-colors">
             {title}
           </h3>
           <div
@@ -89,7 +89,7 @@ export function StatCard({
         </div>
 
         <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
-          <span className="stat-value text-2xl sm:text-3xl font-extrabold text-white tabular-nums tracking-tight">
+          <span className="stat-value text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight">
             {displayValue}
           </span>
 
@@ -101,8 +101,8 @@ export function StatCard({
                 isHero ? 'hero-trend' : ''
               } ${
                 trend.isPositive
-                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                  : 'text-rose-400 bg-rose-500/10 border-rose-500/20'
+                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
+                  : 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20'
               }`}
             >
               {trend.isPositive ? (
@@ -117,10 +117,10 @@ export function StatCard({
       </div>
 
       {(subtitle || onClick) && (
-        <div className="stat-footer mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px] text-gray-400">
+        <div className="stat-footer mt-3 pt-2.5 border-t border-slate-200/70 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500 dark:text-gray-400">
           <span className="stat-subtitle">{subtitle || 'Click to filter'}</span>
           {onClick && (
-            <ArrowRightIcon className="h-3 w-3 text-sky-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+            <ArrowRightIcon className="h-3 w-3 text-sky-600 dark:text-sky-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
           )}
         </div>
       )}

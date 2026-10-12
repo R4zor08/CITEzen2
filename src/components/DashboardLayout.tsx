@@ -40,7 +40,7 @@ export function DashboardLayout({
     setIsMobileOpen(false);
   }, [activeTab]);
   return (
-    <div className="min-h-screen bg-dark-900 text-gray-200 flex overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         user={user}
@@ -61,7 +61,14 @@ export function DashboardLayout({
         <Navbar
           user={user}
           onNavigate={onNavigate}
-          onToggleMobileSidebar={() => setIsMobileOpen(true)} />
+          onToggleMobileSidebar={() => setIsMobileOpen(true)}
+          unreadCount={concernsData?.unreadCount ?? 0}
+          notifications={concernsData?.notifications ?? []}
+          onMarkNotificationRead={concernsData?.markNotificationRead}
+          onMarkAllNotificationsRead={concernsData?.markAllNotificationsRead}
+          onViewAllNotifications={() => onTabChange('notifications')}
+          activeTab={activeTab}
+        />
         
 
         <main className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-6 lg:p-8 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">

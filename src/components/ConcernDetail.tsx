@@ -24,6 +24,7 @@ import {
   CopyIcon,
   CheckIcon
 } from 'lucide-react';
+import { CustomSelect } from './CustomSelect';
 
 function resolveConcernAttachments(concern: Concern): ConcernAttachment[] {
   if (concern.attachments && concern.attachments.length > 0) {
@@ -229,18 +230,18 @@ export function ConcernDetail({
                       <button
                         type="button"
                         onClick={() => setShowStatusMenu(!showStatusMenu)}
-                        className="min-h-[38px] sm:min-h-0 flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/10 transition-colors border border-white/10 touch-manipulation"
+                        className="concern-status-btn min-h-[38px] sm:min-h-0 flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors touch-manipulation shadow-xs"
                       >
                         Update Status
                       </button>
                       {showStatusMenu && (
-                        <div className="absolute right-0 left-0 sm:left-auto top-full mt-2 w-full sm:w-48 rounded-xl border border-white/10 bg-dark-800 shadow-xl z-20 py-1 overflow-hidden animate-slide-down max-h-[min(50vh,320px)] overflow-y-auto custom-scrollbar">
+                        <div className="concern-status-menu absolute right-0 left-0 sm:left-auto top-full mt-2 w-full sm:w-48 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-dark-800 shadow-xl z-20 py-1 overflow-hidden animate-slide-down max-h-[min(50vh,320px)] overflow-y-auto custom-scrollbar">
                           <button
                             onClick={() => {
                               onUpdateStatus(concern.id, 'in-progress');
                               setShowStatusMenu(false);
                             }}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-xs text-blue-400 hover:bg-white/5 text-left font-medium"
+                            className="w-full flex items-center gap-2 px-4 py-2 text-xs text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-white/5 text-left font-medium transition-colors"
                           >
                             <AlertCircleIcon className="h-4 w-4" /> In Progress
                           </button>
@@ -249,7 +250,7 @@ export function ConcernDetail({
                               onUpdateStatus(concern.id, 'resolved');
                               setShowStatusMenu(false);
                             }}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-xs text-green-400 hover:bg-white/5 text-left font-medium"
+                            className="w-full flex items-center gap-2 px-4 py-2 text-xs text-emerald-600 dark:text-green-400 hover:bg-slate-50 dark:hover:bg-white/5 text-left font-medium transition-colors"
                           >
                             <CheckCircle2Icon className="h-4 w-4" /> Resolved
                           </button>
@@ -258,7 +259,7 @@ export function ConcernDetail({
                               onUpdateStatus(concern.id, 'rejected');
                               setShowStatusMenu(false);
                             }}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-xs text-red-400 hover:bg-white/5 text-left font-medium"
+                            className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-600 dark:text-red-400 hover:bg-slate-50 dark:hover:bg-white/5 text-left font-medium transition-colors"
                           >
                             <XCircleIcon className="h-4 w-4" /> Rejected
                           </button>
@@ -274,7 +275,7 @@ export function ConcernDetail({
                           setShowForwardPanel(true);
                         }}
                         disabled={forwardTargets.length === 0}
-                        className="min-h-[38px] sm:min-h-0 flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors border border-purple-500/20 touch-manipulation disabled:opacity-40 disabled:pointer-events-none"
+                        className="concern-forward-btn min-h-[38px] sm:min-h-0 flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-sky-50 dark:bg-purple-500/10 hover:bg-sky-100 dark:hover:bg-purple-500/20 text-sky-700 dark:text-purple-400 border border-sky-200 dark:border-purple-500/20 transition-colors touch-manipulation disabled:opacity-40 disabled:pointer-events-none shadow-xs"
                       >
                         Forward <ArrowRightIcon className="h-3.5 w-3.5 shrink-0" />
                       </button>
@@ -282,13 +283,13 @@ export function ConcernDetail({
                   </>
                 )}
 
-                <div className="hidden sm:block h-6 w-px bg-white/10 mx-1" />
+                <div className="hidden sm:block h-6 w-px bg-slate-200 dark:bg-white/10 mx-1" />
 
                 <button
                   type="button"
                   onClick={onClose}
                   aria-label="Close concern details"
-                  className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all active:scale-95 touch-manipulation ml-auto sm:ml-0"
+                  className="p-2 rounded-xl text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all active:scale-95 touch-manipulation ml-auto sm:ml-0"
                 >
                   <XIcon className="h-5 w-5" />
                 </button>
@@ -296,25 +297,25 @@ export function ConcernDetail({
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 min-h-0 flex flex-col md:flex-row md:gap-0 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-white/10">
+            <div className="flex-1 min-h-0 flex flex-col md:flex-row md:gap-0 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-white/10">
               {/* Left Column: Details */}
               <div className="min-h-0 shrink-0 max-md:max-h-[min(50svh,340px)] md:flex-1 md:min-h-0 md:shrink overflow-y-auto overscroll-contain px-4 py-4 sm:p-6 md:p-7 custom-scrollbar space-y-4 sm:space-y-6">
                 <div>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20">
                       {concern.category}
                     </span>
                     {concern.subcategory && (
                       <>
-                        <span className="text-gray-400 text-xs">•</span>
-                        <span className="text-xs text-gray-400 font-medium">{concern.subcategory}</span>
+                        <span className="text-slate-400 dark:text-gray-400 text-xs">•</span>
+                        <span className="text-xs text-slate-500 dark:text-gray-400 font-medium">{concern.subcategory}</span>
                       </>
                     )}
                   </div>
 
                   <h2
                     id="concern-detail-title"
-                    className="text-xl sm:text-2xl font-extrabold text-white mb-4 leading-snug tracking-tight"
+                    className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mb-4 leading-snug tracking-tight"
                   >
                     {concern.title}
                   </h2>
@@ -322,10 +323,10 @@ export function ConcernDetail({
                   {/* Linear-Style Progress Milestone Stepper */}
                   <div className="concern-milestone-card p-4 sm:p-5 rounded-2xl mb-4 sm:mb-6">
                     <div className="flex items-center justify-between mb-3.5">
-                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                         Case Progress
                       </span>
-                      <span className="text-xs font-semibold capitalize text-sky-400">
+                      <span className="text-xs font-semibold capitalize text-sky-600 dark:text-sky-400">
                         {concern.status === 'rejected' ? 'Rejected' : concern.status.replace('-', ' ')}
                       </span>
                     </div>
@@ -374,7 +375,7 @@ export function ConcernDetail({
                                 className={`absolute top-4 -left-1/2 w-full h-1 -translate-y-1/2 rounded-full transition-colors ${
                                   isDone
                                     ? 'bg-gradient-to-r from-sky-500 to-emerald-400'
-                                    : 'bg-white/10 dark:bg-white/10'
+                                    : 'bg-slate-200 dark:bg-white/10'
                                 }`}
                               />
                             )}
@@ -388,7 +389,7 @@ export function ConcernDetail({
                                   ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/25'
                                   : isCurrent
                                   ? 'bg-sky-500 border-sky-400 text-white shadow-lg shadow-sky-500/30'
-                                  : 'bg-dark-700/80 dark:bg-dark-800 border-white/15 text-gray-500'
+                                  : 'bg-slate-100 dark:bg-dark-700/80 border-slate-300 dark:border-white/15 text-slate-400 dark:text-gray-500'
                               }`}
                             >
                               {isRejected ? (
@@ -396,18 +397,18 @@ export function ConcernDetail({
                               ) : isDone ? (
                                 <CheckCircle2Icon className="h-4 w-4" />
                               ) : (
-                                <span className="h-2 w-2 rounded-full bg-gray-500" />
+                                <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-gray-500" />
                               )}
                             </div>
 
                             <span
                               className={`text-xs font-bold mt-2 leading-tight ${
-                                isDone || isCurrent ? 'text-white' : 'text-gray-500'
+                                isDone || isCurrent ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-gray-500'
                               }`}
                             >
                               {isRejected ? 'Rejected' : step.label}
                             </span>
-                            <span className="text-[10px] text-gray-400 mt-0.5 font-medium truncate max-w-full">
+                            <span className="text-[10px] text-slate-500 dark:text-gray-400 mt-0.5 font-medium truncate max-w-full">
                               {step.detail}
                             </span>
                           </div>
@@ -417,7 +418,7 @@ export function ConcernDetail({
                   </div>
 
                   {/* Metadata Strip */}
-                  <div className="concern-meta-strip p-3 sm:p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400 mb-4 sm:mb-6">
+                  <div className="concern-meta-strip p-3 sm:p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-gray-400 mb-4 sm:mb-6">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 via-sky-600 to-cyan-500 text-white font-bold text-xs uppercase flex items-center justify-center shrink-0 shadow-sm">
                         {concern.studentName
@@ -427,20 +428,20 @@ export function ConcernDetail({
                           .join('')}
                       </div>
                       <div className="min-w-0">
-                        <span className="text-white font-bold text-xs block truncate">
+                        <span className="text-slate-900 dark:text-white font-bold text-xs block truncate">
                           {concern.studentName}
                         </span>
-                        <span className="text-[10px] text-gray-400">Student Submitter</span>
+                        <span className="text-[10px] text-slate-500 dark:text-gray-400">Student Submitter</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/5 border border-white/5">
-                      <BuildingIcon className="h-3.5 w-3.5 text-sky-400" />
-                      <span className="text-gray-300 font-semibold">{concern.department}</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5">
+                      <BuildingIcon className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+                      <span className="text-slate-700 dark:text-gray-300 font-semibold">{concern.department}</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-gray-400 text-xs">
-                      <CalendarIcon className="h-3.5 w-3.5 text-gray-500" />
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 text-xs">
+                      <CalendarIcon className="h-3.5 w-3.5 text-slate-400 dark:text-gray-500" />
                       <span>{formatDate(concern.createdAt)}</span>
                     </div>
                   </div>
@@ -448,19 +449,19 @@ export function ConcernDetail({
                   {/* Description Statement */}
                   <div className="space-y-2 mb-5">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      <h3 className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                         Student Statement
                       </h3>
                       <button
                         type="button"
                         onClick={handleCopyDesc}
-                        className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 transition-colors"
+                        className="text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 flex items-center gap-1 transition-colors"
                         title="Copy statement text"
                       >
                         {copiedDesc ? (
                           <>
-                            <CheckIcon className="h-3.5 w-3.5 text-emerald-400" />
-                            <span className="text-emerald-400">Copied</span>
+                            <CheckIcon className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
+                            <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
                           </>
                         ) : (
                           <>
@@ -477,31 +478,31 @@ export function ConcernDetail({
 
                   {/* AI Classification & Routing Card */}
                   <div className="ai-classification-card rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg mb-5">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 dark:border-white/10 pb-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30">
-                          <SparklesIcon className="h-4 w-4 text-sky-400 animate-pulse" />
+                        <div className="p-2 rounded-xl bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-500/30">
+                          <SparklesIcon className="h-4 w-4 text-sky-600 dark:text-sky-400 animate-pulse" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-white">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                             AI Classification & Routing
                           </h4>
-                          <span className="text-[11px] text-gray-400">
+                          <span className="text-[11px] text-slate-500 dark:text-gray-400">
                             Automated triage & department routing
                           </span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-sky-300 bg-sky-500/15 px-2.5 py-1 rounded-full border border-sky-500/25">
+                        <span className="ai-confidence-pill text-xs font-semibold text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-500/15 px-2.5 py-1 rounded-full border border-sky-300 dark:border-sky-500/25">
                           {Math.round((concern.aiClassification?.confidence ?? 0.88) * 100)}% Confidence
                         </span>
                         {concern.adminReviewStatus === 'pending' || !concern.isConfirmed ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-500/20">
                             Awaiting Confirmation
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-500/20">
                             <CheckCircle2Icon className="h-3 w-3" />
                             Confirmed
                           </span>
@@ -510,17 +511,17 @@ export function ConcernDetail({
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                      <div className="ai-meta-box p-3 rounded-xl border border-white/5 bg-white/5">
-                        <span className="ai-meta-label text-[10px] text-gray-400 block uppercase font-semibold">Triage Category</span>
-                        <span className="ai-meta-val font-bold text-sky-400 text-sm mt-0.5 block">{concern.category}</span>
+                      <div className="ai-meta-box p-3 rounded-xl border border-slate-200/80 dark:border-white/5 bg-slate-50/70 dark:bg-white/5">
+                        <span className="ai-meta-label text-[10px] text-slate-500 dark:text-gray-400 block uppercase font-semibold">Triage Category</span>
+                        <span className="ai-meta-val font-bold text-sky-600 dark:text-sky-400 text-sm mt-0.5 block">{concern.category}</span>
                       </div>
-                      <div className="ai-meta-box p-3 rounded-xl border border-white/5 bg-white/5">
-                        <span className="ai-meta-label text-[10px] text-gray-400 block uppercase font-semibold">Assigned Department</span>
-                        <span className="ai-meta-val font-bold text-cyan-400 text-sm mt-0.5 block">{concern.department}</span>
+                      <div className="ai-meta-box p-3 rounded-xl border border-slate-200/80 dark:border-white/5 bg-slate-50/70 dark:bg-white/5">
+                        <span className="ai-meta-label text-[10px] text-slate-500 dark:text-gray-400 block uppercase font-semibold">Assigned Department</span>
+                        <span className="ai-meta-val font-bold text-teal-600 dark:text-cyan-400 text-sm mt-0.5 block">{concern.department}</span>
                       </div>
-                      <div className="ai-meta-box p-3 rounded-xl border border-white/5 bg-white/5">
-                        <span className="ai-meta-label text-[10px] text-gray-400 block uppercase font-semibold">Staff Assignment</span>
-                        <span className="ai-meta-val font-bold text-white text-sm mt-0.5 block truncate">
+                      <div className="ai-meta-box p-3 rounded-xl border border-slate-200/80 dark:border-white/5 bg-slate-50/70 dark:bg-white/5">
+                        <span className="ai-meta-label text-[10px] text-slate-500 dark:text-gray-400 block uppercase font-semibold">Staff Assignment</span>
+                        <span className="ai-meta-val font-bold text-slate-900 dark:text-white text-sm mt-0.5 block truncate">
                           {concern.assignedTo
                             ? staffUsers?.find((u) => u.id === concern.assignedTo)?.name || 'Assigned Staff'
                             : concern.suggestedStaffName || 'Pending assignment'}
@@ -529,8 +530,8 @@ export function ConcernDetail({
                     </div>
 
                     {concern.aiClassification?.reasoning && (
-                      <div className="ai-reasoning-box text-xs bg-sky-500/10 p-3 rounded-xl border border-sky-500/20 leading-relaxed text-gray-300">
-                        <span className="font-semibold text-sky-400 block mb-0.5">Triage Rationale</span>
+                      <div className="ai-reasoning-box text-xs bg-sky-50 dark:bg-sky-500/10 p-3 rounded-xl border border-sky-200 dark:border-sky-500/20 leading-relaxed text-slate-700 dark:text-gray-300">
+                        <span className="font-semibold text-sky-600 dark:text-sky-400 block mb-0.5">Triage Rationale</span>
                         {concern.aiClassification.reasoning}
                       </div>
                     )}
@@ -544,46 +545,51 @@ export function ConcernDetail({
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           <div>
                             <label className="text-[10px] text-gray-400 block mb-1 font-medium">Category</label>
-                            <select
+                            <CustomSelect
                               value={selectedCat}
-                              onChange={(e) => setSelectedCat(e.target.value)}
-                              className="w-full bg-dark-800 border border-white/10 rounded-xl py-1.5 px-2 text-xs text-white focus:outline-none focus:border-sky-500"
-                            >
-                              {['Academic', 'Administrative', 'Facility', 'Complaints'].map((cat) => (
-                                <option key={cat} value={cat}>
-                                  {cat}
-                                </option>
-                              ))}
-                            </select>
+                              onChange={(val) => setSelectedCat(val)}
+                              options={[
+                                { value: 'Academic', label: 'Academic' },
+                                { value: 'Administrative', label: 'Administrative' },
+                                { value: 'Facility', label: 'Facility' },
+                                { value: 'Complaints', label: 'Complaints' }
+                              ]}
+                              size="sm"
+                              className="w-full"
+                            />
                           </div>
                           <div>
                             <label className="text-[10px] text-gray-400 block mb-1 font-medium">Department</label>
-                            <select
+                            <CustomSelect
                               value={selectedDept}
-                              onChange={(e) => setSelectedDept(e.target.value)}
-                              className="w-full bg-dark-800 border border-white/10 rounded-xl py-1.5 px-2 text-xs text-white focus:outline-none focus:border-sky-500"
-                            >
-                              {departmentsList.map((d) => (
-                                <option key={d} value={d}>
-                                  {d}
-                                </option>
-                              ))}
-                            </select>
+                              onChange={(val) => setSelectedDept(val)}
+                              options={departmentsList.map((d) => ({
+                                value: d,
+                                label: d,
+                                icon: <BuildingIcon className="h-3.5 w-3.5 text-sky-400" />
+                              }))}
+                              size="sm"
+                              className="w-full"
+                            />
                           </div>
                           <div>
                             <label className="text-[10px] text-gray-400 block mb-1 font-medium">Assign to Staff</label>
-                            <select
+                            <CustomSelect
                               value={selectedStaffId}
-                              onChange={(e) => setSelectedStaffId(e.target.value)}
-                              className="w-full bg-dark-800 border border-white/10 rounded-xl py-1.5 px-2 text-xs text-white focus:outline-none focus:border-sky-500"
-                            >
-                              <option value="">Select staff member…</option>
-                              {staffUsers?.map((u) => (
-                                <option key={u.id} value={u.id}>
-                                  {u.name} ({u.department || 'No dept'})
-                                </option>
-                              ))}
-                            </select>
+                              onChange={(val) => setSelectedStaffId(val)}
+                              options={[
+                                { value: '', label: 'Select staff member…' },
+                                ...(staffUsers?.map((u) => ({
+                                  value: u.id,
+                                  label: u.name,
+                                  badge: u.department || 'No dept',
+                                  badgeColor: (u.department === selectedDept ? 'sky' : 'slate') as 'sky' | 'slate'
+                                })) || [])
+                              ]}
+                              size="sm"
+                              className="w-full"
+                              placeholder="Select staff member…"
+                            />
                           </div>
                         </div>
                         <div className="flex justify-end">
@@ -626,7 +632,7 @@ export function ConcernDetail({
                 {/* Additional Form Data Details */}
                 {concern.formData && Object.keys(concern.formData).length > 0 && (
                   <div>
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
+                    <h3 className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2.5">
                       Additional Information
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -635,12 +641,12 @@ export function ConcernDetail({
                         .map(([key, value]) => (
                           <div
                             key={key}
-                            className="bg-white/5 p-3 rounded-xl border border-white/10"
+                            className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/10"
                           >
-                            <div className="text-[10px] text-gray-400 font-semibold mb-0.5 uppercase">
+                            <div className="text-[10px] text-slate-500 dark:text-gray-400 font-semibold mb-0.5 uppercase">
                               {key.replace(/([A-Z])/g, ' $1').trim()}
                             </div>
-                            <div className="text-xs sm:text-sm text-gray-200 font-medium break-words">
+                            <div className="text-xs sm:text-sm text-slate-800 dark:text-gray-200 font-medium break-words">
                               {value as string}
                             </div>
                           </div>
@@ -652,7 +658,7 @@ export function ConcernDetail({
                 {/* Attachments */}
                 {resolveConcernAttachments(concern).length > 0 && (
                   <div>
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
+                    <h3 className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2.5">
                       Supporting Attachments
                     </h3>
                     <div className="flex flex-wrap gap-2.5">
@@ -663,17 +669,17 @@ export function ConcernDetail({
                           target="_blank"
                           rel="noopener noreferrer"
                           download={att.name}
-                          className="flex items-center gap-2.5 bg-white/5 px-3.5 py-2.5 rounded-xl border border-white/10 text-xs sm:text-sm text-gray-300 hover:bg-white/10 hover:border-sky-500/30 transition-all group"
+                          className="flex items-center gap-2.5 bg-slate-50 dark:bg-white/5 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs sm:text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-sky-500/30 transition-all group shadow-sm"
                         >
                           {att.mimeType.startsWith('image/') ? (
-                            <ImageIcon className="h-4 w-4 text-cyan-400 shrink-0" />
+                            <ImageIcon className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
                           ) : (
-                            <FileTextIcon className="h-4 w-4 text-sky-400 shrink-0" />
+                            <FileTextIcon className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" />
                           )}
                           <span className="flex flex-col min-w-0">
-                            <span className="truncate max-w-[12rem] font-medium group-hover:text-white transition-colors">{att.name}</span>
+                            <span className="truncate max-w-[12rem] font-medium group-hover:text-sky-600 dark:group-hover:text-white transition-colors">{att.name}</span>
                             {att.size > 0 && (
-                              <span className="text-[10px] text-gray-500">
+                              <span className="text-[10px] text-slate-400 dark:text-gray-500">
                                 {formatFileSize(att.size)}
                               </span>
                             )}
@@ -687,14 +693,14 @@ export function ConcernDetail({
 
               {/* Right Column: Comments & Discussion Feed */}
               <div className="concern-discussion-panel w-full flex flex-1 flex-col min-h-0 max-md:min-h-[min(36svh,260px)] md:min-h-0 md:flex-1 md:min-w-0 md:max-w-[48%] overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/10 bg-white/[0.02] flex items-center justify-between shrink-0">
+                <div className="px-4 py-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2">
-                    <MessageSquareIcon className="h-4 w-4 text-sky-400" />
-                    <h3 className="font-bold text-white text-xs sm:text-sm">
+                    <MessageSquareIcon className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                    <h3 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
                       Activity & Discussion
                     </h3>
                   </div>
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-gray-400 border border-white/10">
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10">
                     {concern.comments.length + 1} events
                   </span>
                 </div>
@@ -703,18 +709,18 @@ export function ConcernDetail({
                   {/* Initial Audit Event */}
                   <div className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className="h-7 w-7 rounded-full bg-sky-500/15 border border-sky-500/25 flex items-center justify-center text-sky-400 shrink-0">
+                      <div className="h-7 w-7 rounded-full bg-sky-100 dark:bg-sky-500/15 border border-sky-300 dark:border-sky-500/25 flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
                         <CheckCircle2Icon className="h-3.5 w-3.5" />
                       </div>
-                      <div className="w-px flex-1 bg-white/10 my-1" />
+                      <div className="w-px flex-1 bg-slate-200 dark:bg-white/10 my-1" />
                     </div>
                     <div className="pb-2 flex-1">
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-xs font-bold text-white">System Route</span>
-                        <span className="text-[11px] text-gray-400">{formatDate(concern.createdAt)}</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">System Route</span>
+                        <span className="text-[11px] text-slate-500 dark:text-gray-400">{formatDate(concern.createdAt)}</span>
                       </div>
-                      <div className="text-xs text-gray-400 p-2.5 rounded-xl bg-white/[0.03] border border-white/5 leading-relaxed">
-                        Concern logged by <strong className="text-white font-medium">{concern.studentName}</strong> and routed to <strong className="text-sky-400 font-semibold">{concern.department}</strong>.
+                      <div className="text-xs text-slate-600 dark:text-gray-400 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 leading-relaxed">
+                        Concern logged by <strong className="text-slate-900 dark:text-white font-medium">{concern.studentName}</strong> and routed to <strong className="text-sky-600 dark:text-sky-400 font-semibold">{concern.department}</strong>.
                       </div>
                     </div>
                   </div>
@@ -731,8 +737,8 @@ export function ConcernDetail({
                           <div
                             className={`h-7 w-7 rounded-full flex items-center justify-center border shrink-0 text-xs font-bold ${
                               isStaff
-                                ? 'bg-sky-500/20 border-sky-500/30 text-sky-300'
-                                : 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white'
+                                ? 'bg-sky-100 dark:bg-sky-500/20 border-sky-300 dark:border-sky-500/30 text-sky-700 dark:text-sky-300'
+                                : 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-transparent'
                             }`}
                           >
                             {isStaff ? (
@@ -745,26 +751,26 @@ export function ConcernDetail({
                                 .join('')
                             )}
                           </div>
-                          {!isLast && <div className="w-px flex-1 bg-white/10 my-1" />}
+                          {!isLast && <div className="w-px flex-1 bg-slate-200 dark:bg-white/10 my-1" />}
                         </div>
 
                         <div className="pb-2 flex-1">
                           <div className="flex items-center justify-between gap-2 mb-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs font-bold text-white">
+                              <span className="text-xs font-bold text-slate-900 dark:text-white">
                                 {comment.author}
                               </span>
                               <span
                                 className={`text-[10px] font-semibold px-2 py-0.2 rounded-full border ${
                                   isStaff
-                                    ? 'bg-sky-500/15 text-sky-400 border-sky-500/25'
-                                    : 'bg-white/5 text-gray-400 border-white/10'
+                                    ? 'bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-500/25'
+                                    : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 border-slate-200 dark:border-white/10'
                                 }`}
                               >
                                 {isStaff ? 'Staff · Official' : 'Student'}
                               </span>
                             </div>
-                            <span className="text-[11px] text-gray-400">
+                            <span className="text-[11px] text-slate-500 dark:text-gray-400">
                               {formatDate(comment.createdAt)}
                             </span>
                           </div>
@@ -772,8 +778,8 @@ export function ConcernDetail({
                           <div
                             className={`text-xs p-3 rounded-2xl leading-relaxed ${
                               isStaff
-                                ? 'comment-bubble-staff bg-sky-500/[0.06] border border-sky-500/20 text-gray-200'
-                                : 'comment-bubble-user bg-white/[0.03] border border-white/10 text-gray-300'
+                                ? 'comment-bubble-staff bg-sky-50/80 dark:bg-sky-500/[0.06] border border-sky-200 dark:border-sky-500/20 text-slate-800 dark:text-gray-200'
+                                : 'comment-bubble-user bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-300'
                             }`}
                           >
                             {comment.content}
@@ -785,13 +791,13 @@ export function ConcernDetail({
                 </div>
 
                 {/* Comment Input Composer */}
-                <div className="p-3 border-t border-white/10 bg-white/[0.02] shrink-0 citezen-safe-bottom">
+                <div className="p-3 border-t border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] shrink-0 citezen-safe-bottom">
                   <form onSubmit={handleAddComment} className="relative">
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Write a message or reply..."
-                      className="comment-input-box w-full bg-dark-900 border border-white/10 rounded-xl pl-3.5 pr-12 py-2.5 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all resize-none custom-scrollbar min-h-[64px] max-md:min-h-[56px]"
+                      className="comment-input-box w-full bg-white dark:bg-dark-900 border border-slate-300 dark:border-white/10 rounded-xl pl-3.5 pr-12 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all resize-none custom-scrollbar min-h-[64px] max-md:min-h-[56px] shadow-sm"
                       rows={2}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -810,9 +816,9 @@ export function ConcernDetail({
                       <SendIcon className="h-4 w-4" />
                     </button>
                   </form>
-                  <div className="flex items-center justify-between text-[10px] text-gray-400 px-1 pt-1">
-                    <span>Press <kbd className="px-1 py-0.2 rounded bg-white/5 border border-white/10 font-mono">Enter</kbd> to send</span>
-                    <span><kbd className="px-1 py-0.2 rounded bg-white/5 border border-white/10 font-mono">Shift+Enter</kbd> for new line</span>
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-gray-400 px-1 pt-1">
+                    <span>Press <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 font-mono text-slate-600 dark:text-gray-400">Enter</kbd> to send</span>
+                    <span><kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 font-mono text-slate-600 dark:text-gray-400">Shift+Enter</kbd> for new line</span>
                   </div>
                 </div>
               </div>
@@ -933,7 +939,7 @@ export function ConcernDetail({
                             }}
                             className="w-full flex items-center gap-3 text-left min-h-[50px] px-4 py-3 rounded-xl border border-[var(--border-color)] bg-[var(--glass-bg)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-sky-500/10 hover:border-sky-500/30 active:scale-[0.99] transition-all touch-manipulation shadow-sm"
                           >
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20">
                               <BuildingIcon className="h-4 w-4" />
                             </span>
                             <span className="font-semibold leading-snug flex-1">{dept}</span>

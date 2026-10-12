@@ -221,11 +221,17 @@ export function Sidebar({
               className="whitespace-nowrap flex items-center gap-2">
               
                   {tab.label}
-                  {isNotification && unreadCount > 0 &&
-              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500/20 px-1.5 text-[10px] font-bold text-red-500 border border-red-500/30">
+                  {isNotification && unreadCount > 0 && (
+                    <span
+                      className={`sidebar-notification-badge flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold border transition-colors shadow-xs ${
+                        isActive
+                          ? 'bg-sky-500 text-white border-sky-400/40 dark:bg-[#00D492] dark:text-[#0B131F] dark:border-[#00D492]/50'
+                          : 'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/30'
+                      }`}
+                    >
                       {unreadCount}
                     </span>
-              }
+                  )}
                 </motion.span>
             }
             </div>
@@ -249,17 +255,17 @@ export function Sidebar({
           duration: 0.3,
           ease: 'easeInOut'
         }}
-        className="hidden md:flex flex-col h-screen shrink-0 glass-panel rounded-none border-y-0 border-l-0 border-r border-white/10 z-20 relative overflow-hidden">
+        className="hidden md:flex flex-col h-screen shrink-0 glass-panel rounded-none border-y-0 border-l-0 border-r border-[var(--border-color)] z-20 relative overflow-hidden">
         
         <div
-          className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'justify-between px-4'} h-16 shrink-0 border-b border-white/5 transition-all`}>
+          className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'justify-between px-4'} h-16 shrink-0 border-b border-[var(--border-color)] transition-all`}>
           
           <div
             className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} overflow-hidden ${isCollapsed ? 'cursor-pointer' : ''}`}
             onClick={isCollapsed ? onToggleCollapse : undefined}
             title={isCollapsed ? 'Expand Sidebar' : undefined}>
             
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10 hover:border-sky-500/30 transition-colors">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-[var(--border-color)] hover:border-sky-500/30 transition-colors">
               <img
                 src="/citezen.png?v=2"
                 alt="Logo"
@@ -280,7 +286,7 @@ export function Sidebar({
                   opacity: 0,
                   width: 0
                 }}
-                className="text-lg font-bold tracking-tight text-white whitespace-nowrap">
+                className="text-lg font-bold tracking-tight text-[var(--text-primary)] whitespace-nowrap">
                 
                   CITE<span className="text-gradient">zen</span>
                 </motion.span>
@@ -290,7 +296,7 @@ export function Sidebar({
           {!isCollapsed &&
           <button
             onClick={onToggleCollapse}
-            className="p-1.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors flex items-center justify-center shrink-0"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center shrink-0"
             title="Collapse Sidebar">
             
               <ChevronLeftIcon className="h-5 w-5" />
@@ -302,14 +308,14 @@ export function Sidebar({
           {renderNavItems(false)}
         </div>
 
-        <div className="mt-auto border-t border-white/5 shrink-0 flex flex-col p-3 gap-2 bg-dark-900/50">
+        <div className="mt-auto border-t border-[var(--border-color)] shrink-0 flex flex-col p-3 gap-2 bg-slate-100/50 dark:bg-dark-900/50">
           {/* User Profile Mini-card */}
           <button
             onClick={() => onTabChange('profile')}
-            className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start gap-3 px-3'} py-2.5 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 w-full text-left group`}
+            className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start gap-3 px-3'} py-2.5 rounded-xl hover:bg-[var(--glass-bg-hover)] transition-colors border border-transparent hover:border-[var(--border-color)] w-full text-left group`}
             title={isCollapsed ? 'View Profile' : undefined}>
             
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-dark-800 border border-white/10 group-hover:border-purple-500/50 transition-colors">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 dark:bg-dark-800 border border-[var(--border-color)] group-hover:border-sky-500/50 transition-colors">
               {user.profilePicture ?
               <img
                 src={user.profilePicture}
@@ -317,16 +323,16 @@ export function Sidebar({
                 className="h-full w-full object-cover" /> :
 
 
-              <UserIcon className="h-4 w-4 text-gray-400" />
+              <UserIcon className="h-4 w-4 text-[var(--text-muted)]" />
               }
             </div>
             {!isCollapsed &&
             <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-medium text-white truncate">
+                <span className="text-sm font-medium text-[var(--text-primary)] truncate">
                   {user.name}
                 </span>
                 {user.role !== 'student' && (
-                  <span className="text-xs text-sky-400 capitalize truncate">
+                  <span className="text-xs text-sky-600 dark:text-sky-400 capitalize truncate">
                     {user.role}
                   </span>
                 )}
@@ -380,23 +386,23 @@ export function Sidebar({
               duration: 0.3,
               ease: 'easeInOut'
             }}
-            className="fixed inset-y-0 left-0 w-64 glass-panel rounded-none border-y-0 border-l-0 border-r border-white/10 z-50 flex flex-col md:hidden">
+            className="fixed inset-y-0 left-0 w-64 glass-panel rounded-none border-y-0 border-l-0 border-r border-[var(--border-color)] z-50 flex flex-col md:hidden">
             
-              <div className="flex items-center justify-between h-16 px-4 shrink-0 border-b border-white/5">
+              <div className="flex items-center justify-between h-16 px-4 shrink-0 border-b border-[var(--border-color)]">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10">
+                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-[var(--border-color)]">
                     <img
                     src="/citezen.png?v=2"
                     alt="Logo"
                     className="h-8 w-8 object-cover rounded-full" />
                   </div>
-                  <span className="text-lg font-bold tracking-tight text-white">
+                  <span className="text-lg font-bold tracking-tight text-[var(--text-primary)]">
                     CITE<span className="text-gradient">zen</span>
                   </span>
                 </div>
                 <button
                 onClick={onCloseMobile}
-                className="p-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white">
+                className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)]">
                 
                   <XIcon className="h-5 w-5" />
                 </button>
@@ -406,16 +412,16 @@ export function Sidebar({
                 {renderNavItems(true)}
               </div>
 
-              <div className="mt-auto border-t border-white/5 shrink-0 flex flex-col p-4 gap-3 bg-dark-900/50">
+              <div className="mt-auto border-t border-[var(--border-color)] shrink-0 flex flex-col p-4 gap-3 bg-slate-100/50 dark:bg-dark-900/50">
                 {/* Mobile User Profile */}
                 <button
                 onClick={() => {
                   onTabChange('profile');
                   onCloseMobile();
                 }}
-                className="flex items-center justify-start gap-3 px-3 py-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 w-full text-left">
+                className="flex items-center justify-start gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-bg-hover)] transition-colors border border-transparent hover:border-[var(--border-color)] w-full text-left">
                 
-                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-dark-800 border border-white/10">
+                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 dark:bg-dark-800 border border-[var(--border-color)]">
                     {user.profilePicture ?
                   <img
                     src={user.profilePicture}
@@ -423,15 +429,15 @@ export function Sidebar({
                     className="h-full w-full object-cover" /> :
 
 
-                  <UserIcon className="h-5 w-5 text-gray-400" />
+                  <UserIcon className="h-5 w-5 text-[var(--text-muted)]" />
                   }
                   </div>
                   <div className="flex flex-col overflow-hidden">
-                    <span className="text-sm font-medium text-white truncate">
+                    <span className="text-sm font-medium text-[var(--text-primary)] truncate">
                       {user.name}
                     </span>
                     {user.role !== 'student' && (
-                      <span className="text-xs text-sky-400 capitalize truncate">
+                      <span className="text-xs text-sky-600 dark:text-sky-400 capitalize truncate">
                         {user.role}
                       </span>
                     )}

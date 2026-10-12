@@ -28,7 +28,7 @@ export function ClearNotificationsModal({
         exit={{
           opacity: 0
         }}
-        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-dark-900/80 backdrop-blur-sm"
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 dark:bg-dark-900/80 backdrop-blur-sm"
         onClick={() => {
           if (!isLoading) onClose();
         }}>
@@ -57,24 +57,24 @@ export function ClearNotificationsModal({
           className="glass-panel w-full sm:max-w-sm p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl shadow-red-500/10 border-red-500/20 rounded-t-2xl sm:rounded-2xl"
           onClick={(e) => e.stopPropagation()}>
           
-            <div className="hidden sm:flex w-12 h-12 rounded-full bg-red-500/10 items-center justify-center mb-4 border border-red-500/20 text-red-400">
+            <div className="hidden sm:flex w-12 h-12 rounded-full bg-red-500/10 items-center justify-center mb-4 border border-red-500/20 text-red-500 dark:text-red-400">
               <Trash2Icon className="h-6 w-6" />
             </div>
 
             {/* Mobile drag handle */}
-            <div className="sm:hidden w-10 h-1 rounded-full bg-white/20 mb-5 shrink-0" />
+            <div className="sm:hidden w-10 h-1 rounded-full bg-slate-300 dark:bg-white/20 mb-5 shrink-0" />
 
             {/* Mobile icon */}
-            <div className="sm:hidden h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 border border-red-500/20 text-red-400">
+            <div className="sm:hidden h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 border border-red-500/20 text-red-500 dark:text-red-400">
               <Trash2Icon className="h-6 w-6" />
             </div>
 
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2">
               Clear all notifications
             </h3>
-            <p className="text-sm text-gray-400 mb-6 leading-relaxed max-w-[280px] sm:max-w-none">
+            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6 leading-relaxed max-w-[280px] sm:max-w-none">
               This will permanently remove{' '}
-              <span className="text-white font-semibold">{count}</span>{' '}
+              <span className="text-slate-900 dark:text-white font-semibold">{count}</span>{' '}
               {itemWord}. Your concerns and comments are not affected.
             </p>
 
@@ -83,7 +83,7 @@ export function ClearNotificationsModal({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 px-4 py-3 sm:py-2.5 rounded-xl border border-white/10 text-white font-medium hover:bg-white/5 active:scale-[0.98] transition-all text-sm sm:text-base disabled:opacity-60 disabled:cursor-not-allowed">
+              className="flex-1 px-4 py-3 sm:py-2.5 rounded-xl border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white font-medium hover:bg-slate-100 dark:hover:bg-white/5 active:scale-[0.98] transition-all text-sm sm:text-base disabled:opacity-60 disabled:cursor-not-allowed">
               
                 Cancel
               </button>

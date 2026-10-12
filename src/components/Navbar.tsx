@@ -1,19 +1,37 @@
 import { useEffect, useState } from 'react';
-import { User } from '../types';
-import { MenuIcon, SunIcon, MoonIcon, XIcon } from 'lucide-react';
+import { User, Notification } from '../types';
+import { MenuIcon, SunIcon, MoonIcon, XIcon, BellIcon } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { RecentNotificationsModal } from './RecentNotificationsModal';
+
 interface NavbarProps {
   user: User | null;
   onNavigate: (page: string) => void;
   onToggleMobileSidebar?: () => void;
+  unreadCount?: number;
+  notifications?: Notification[];
+  onMarkNotificationRead?: (id: string) => void | Promise<void>;
+  onMarkAllNotificationsRead?: () => void | Promise<void>;
+  onViewAllNotifications?: () => void;
+  onNotificationClick?: () => void;
+  activeTab?: string;
 }
+
 export function Navbar({
   user,
   onNavigate,
-  onToggleMobileSidebar
+  onToggleMobileSidebar,
+  unreadCount = 0,
+  notifications = [],
+  onMarkNotificationRead,
+  onMarkAllNotificationsRead,
+  onViewAllNotifications,
+  onNotificationClick,
+  activeTab
 }: NavbarProps) {
   const { isDark, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const handleNavigate = (page: string) => {
     onNavigate(page);
@@ -157,13 +175,13 @@ export function Navbar({
   }
   // Dashboard Navbar (authenticated user) — minimal
   return (
-    <nav className="sticky top-0 z-30 w-full glass-panel rounded-none border-x-0 border-t-0 px-4 py-3 sm:px-6 lg:px-8 bg-dark-900/80 backdrop-blur-xl">
+    <nav className="dashboard-navbar sticky top-0 z-30 w-full border-x-0 border-t-0 border-b border-slate-200/90 dark:border-white/10 px-4 py-3 sm:px-6 lg:px-8 bg-white dark:bg-dark-900 transition-colors shadow-xs">
       <div className="flex items-center justify-between">
         {/* Mobile Left: Hamburger + Logo */}
         <div className="flex items-center gap-3 md:hidden">
           <button
             onClick={onToggleMobileSidebar}
-            className="rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+            className="rounded-lg p-2 text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors"
             title="Menu">
             
             <MenuIcon className="h-6 w-6" />
@@ -172,13 +190,13 @@ export function Navbar({
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => onNavigate(`${user.role}-dashboard`)}>
             
-            <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-white/10">
+            <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-slate-200 dark:border-white/10">
               <img
                 src="/citezen.png?v=2"
                 alt="Logo"
                 className="h-8 w-8 object-cover rounded-full" />
             </div>
-            <span className="text-lg font-bold tracking-tight text-white">
+            <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
               CITE<span className="text-gradient">zen</span>
             </span>
           </div>
@@ -186,27 +204,51 @@ export function Navbar({
 
         {/* Desktop Left */}
         <div className="hidden md:flex items-center gap-3">
-          <h1 className="text-lg font-bold text-white capitalize tracking-tight">
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white capitalize tracking-tight">
             {user.role} Dashboard
           </h1>
         </div>
 
-        {/* Right: Theme Toggle */}
-        <div className="flex items-center gap-2">
+        {/* Right: Notifications Icon */}
+        <div className="relative flex items-center gap-2">
           <button
             type="button"
-            onClick={toggleTheme}
-            className="rounded-xl p-2 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            aria-label="Toggle theme">
-            {isDark ? (
-              <SunIcon className="h-5 w-5" />
-            ) : (
-              <MoonIcon className="h-5 w-5" />
+            onClick={() => setIsNotificationModalOpen((prev) => !prev)}
+            className={`relative rounded-xl p-2.5 transition-all border touch-manipulation ${
+              isNotificationModalOpen || activeTab === 'notifications'
+                ? 'bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-500/30 shadow-xs'
+                : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 border-transparent hover:border-slate-200 dark:hover:border-white/10'
+            }`}
+            title="Notifications"
+            aria-label="Notifications"
+          >
+            <BellIcon className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-xs ring-2 ring-white dark:ring-dark-900">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
             )}
           </button>
+
+          <RecentNotificationsModal
+            isOpen={isNotificationModalOpen}
+            onClose={() => setIsNotificationModalOpen(false)}
+            notifications={notifications}
+            onMarkRead={(id) => onMarkNotificationRead?.(id)}
+            onMarkAllRead={onMarkAllNotificationsRead}
+            onViewAll={() => {
+              setIsNotificationModalOpen(false);
+              if (onViewAllNotifications) {
+                onViewAllNotifications();
+              } else if (onNotificationClick) {
+                onNotificationClick();
+              } else {
+                onNavigate('notifications');
+              }
+            }}
+            maxRecent={5}
+          />
         </div>
       </div>
     </nav>);
-
 }

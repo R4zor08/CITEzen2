@@ -134,7 +134,7 @@ function EditButton({
 }
 
 function ThemeSelector() {
-  const { theme, preference, setPreference, systemTheme } = useTheme();
+  const { preference, setPreference, systemTheme } = useTheme();
 
   const handleSelect = (pref: ThemePreference) => {
     setPreference(pref);
@@ -311,41 +311,11 @@ function ThemeSelector() {
           );
         })}
       </div>
-
-      {/* Dynamic Status Banner */}
-      <div className="p-3 sm:p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)] flex items-start gap-2.5 sm:gap-3">
-        <div className="h-7 w-7 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-          <SparklesIcon className="h-3.5 w-3.5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-[var(--text-primary)]">
-              Current display mode:
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/20 capitalize">
-              {theme} mode
-            </span>
-            {preference === 'system' && (
-              <span className="text-xs text-[var(--text-muted)]">
-                (Synced with OS: {systemTheme} mode)
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-[var(--text-secondary)] mt-1 leading-relaxed">
-            {preference === 'system'
-              ? `System mode is active. CITEzen is rendering in ${theme} mode to match your device, and will automatically adapt whenever your OS appearance changes.`
-              : preference === 'dark'
-                ? 'Dark mode is locked. The interface remains in high-contrast obsidian dark mode regardless of device settings.'
-                : 'Light mode is locked. The interface remains in clean daylight mode regardless of device settings.'}
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
 
 export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
-  const { systemTheme } = useTheme();
   const [settingsTab, setSettingsTab] = useState<SettingsTab>('profile');
   const [editingCard, setEditingCard] = useState<EditableCard>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -849,20 +819,6 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
             </div>
                   {saveBar(editingCard === 'academic')}
                 </section>
-
-                <section className="profile-card">
-                  <div className="flex items-start justify-between gap-4 mb-5">
-                    <div>
-                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
-                        Theme & Appearance
-                      </h3>
-                      <p className="text-xs text-[var(--text-muted)] mt-1">
-                        Choose whether CITEzen displays in light, dark, or syncs with your system.
-                      </p>
-                    </div>
-                  </div>
-                  <ThemeSelector />
-                </section>
               </motion.div>
             )}
 
@@ -998,34 +954,6 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
                     </div>
                   </div>
                   <ThemeSelector />
-                </section>
-
-                <section className="profile-card">
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="h-9 w-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center shrink-0">
-                      <MonitorIcon className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
-                        Display & Device Sync
-                      </h3>
-                      <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                        Your theme preference is saved and applies across all pages on this device.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
-                    <div>
-                      <p className="profile-field-label">System Appearance</p>
-                      <p className="profile-field-value capitalize">Device currently set to {systemTheme} mode</p>
-                    </div>
-                    <div>
-                      <p className="profile-field-label">Header Quick Toggle</p>
-                      <p className="profile-field-value text-xs text-[var(--text-secondary)] font-normal">
-                        Click the sun/moon icon at the top right of your screen anytime to quickly flip modes.
-                      </p>
-                    </div>
-                  </div>
                 </section>
               </motion.div>
             )}
