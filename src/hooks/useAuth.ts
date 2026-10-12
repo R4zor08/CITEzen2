@@ -28,10 +28,10 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('citezen_user');
-    if (storedUser) {
+    const rawStored = localStorage.getItem('citezen_user') || sessionStorage.getItem('citezen_user');
+    if (rawStored) {
       try {
-        const parsed = JSON.parse(storedUser);
+        const parsed = JSON.parse(rawStored);
         setUser(normalizeStoredUser(parsed));
       } catch {
         console.error('Failed to parse stored user');
@@ -40,13 +40,27 @@ export function useAuth() {
     setIsLoading(false);
   }, []);
 
-  const login = async (identifier: string, password: string, role: Role) => {
+  const login = async (
+    identifier: string,
+    password: string,
+    role: Role,
+    rememberMe: boolean = false
+  ) => {
     const { user: u, token } = await apiJson<{ user: User; token: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ identifier, password, role })
     });
-    localStorage.setItem('citezen_token', token);
-    localStorage.setItem('citezen_user', JSON.stringify(u));
+    if (rememberMe) {
+      localStorage.setItem('citezen_token', token);
+      localStorage.setItem('citezen_user', JSON.stringify(u));
+      sessionStorage.removeItem('citezen_token');
+      sessionStorage.removeItem('citezen_user');
+    } else {
+      sessionStorage.setItem('citezen_token', token);
+      sessionStorage.setItem('citezen_user', JSON.stringify(u));
+      localStorage.removeItem('citezen_token');
+      localStorage.removeItem('citezen_user');
+    }
     setUser(u);
     return u;
   };
@@ -85,6 +99,8 @@ export function useAuth() {
     setUser(null);
     localStorage.removeItem('citezen_user');
     localStorage.removeItem('citezen_token');
+    sessionStorage.removeItem('citezen_user');
+    sessionStorage.removeItem('citezen_token');
   };
 
   const updateUser = async (updates: Partial<User>) => {
