@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Role, User } from '../types';
 import { departmentsList } from '../data/mockData';
-import { useTheme } from '../hooks/useTheme';
 import {
   MailIcon,
   LockIcon,
@@ -10,13 +9,13 @@ import {
   BookOpenIcon,
   BuildingIcon,
   ArrowRightIcon,
+  ArrowLeftIcon,
   Loader2Icon,
   EyeIcon,
   EyeOffIcon,
-  SunIcon,
-  MoonIcon,
   AlertCircleIcon
 } from 'lucide-react';
+import { CustomSelect } from '../components/CustomSelect';
 
 const NEMSU_EMAIL_RE = /^[^\s@]+@nemsu\.edu\.ph$/i;
 
@@ -30,7 +29,6 @@ interface RegisterPageProps {
 }
 
 export function RegisterPage({ onRegister, onNavigate }: RegisterPageProps) {
-  const { isDark, toggleTheme } = useTheme();
   const [role, setRole] = useState<Role>('student');
   const [formData, setFormData] = useState({
     name: '',
@@ -110,12 +108,15 @@ export function RegisterPage({ onRegister, onNavigate }: RegisterPageProps) {
 
       <button
         type="button"
-        onClick={toggleTheme}
-        className="auth-theme-btn absolute top-4 right-4 sm:top-6 sm:right-6 z-20 rounded-xl p-2.5 transition-colors"
-        title="Toggle theme"
+        onClick={() => onNavigate('landing')}
+        className="auth-theme-btn absolute top-4 left-4 sm:top-6 sm:left-6 z-20 rounded-xl p-2.5 transition-all flex items-center gap-1.5 text-xs sm:text-sm font-medium hover:scale-105 active:scale-95 cursor-pointer group"
+        title="Back"
       >
-        {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+        <ArrowLeftIcon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-0.5 transition-transform" />
+        <span className="hidden sm:inline">Back</span>
       </button>
+
+
 
       <div className="mx-auto w-full max-w-md relative z-10">
         <div
@@ -167,6 +168,8 @@ export function RegisterPage({ onRegister, onNavigate }: RegisterPageProps) {
             </div>
           ) : (
             <>
+
+
               <div className="auth-role-track flex p-1 rounded-xl mb-6 sm:mb-8 shadow-inner">
                 {(['student', 'staff'] as const).map((r) => (
                   <button
@@ -311,24 +314,17 @@ export function RegisterPage({ onRegister, onNavigate }: RegisterPageProps) {
                     <label className="auth-label block text-xs sm:text-sm font-medium mb-1 sm:mb-1.5">
                       Department
                     </label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <BuildingIcon className={inputIcon} />
-                      </div>
-                      <select
-                        name="department"
-                        value={formData.department}
-                        onChange={handleChange}
-                        className="auth-input block pl-9 sm:pl-10 py-2.5 sm:py-3 text-sm sm:text-base appearance-none"
-                        required={role === 'staff'}
-                      >
-                        {departmentsList.map((dept) => (
-                          <option key={dept} value={dept}>
-                            {dept}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <CustomSelect
+                      value={formData.department}
+                      onChange={(val) => setFormData((prev) => ({ ...prev, department: val }))}
+                      options={departmentsList.map((dept) => ({
+                        value: dept,
+                        label: dept,
+                        icon: <BuildingIcon className="h-4 w-4 text-sky-500" />
+                      }))}
+                      icon={<BuildingIcon className={inputIcon} />}
+                      className="w-full"
+                    />
                   </div>
                 )}
 

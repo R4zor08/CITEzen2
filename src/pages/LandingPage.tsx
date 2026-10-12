@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Navbar } from '../components/Navbar';
 import { HowItWorksCarousel } from '../components/HowItWorksCarousel';
 import {
@@ -17,8 +18,13 @@ import {
   FileEditIcon,
   SearchIcon,
   CheckCircle2Icon,
-  StarIcon
+  StarIcon,
+  CopyIcon,
+  CheckIcon,
+  Loader2Icon
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { apiJson } from '../lib/api';
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
@@ -232,6 +238,59 @@ function HeroCards() {
 }
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedSuccess, setSubmittedSuccess] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !contactForm.name.trim() ||
+      !contactForm.email.trim() ||
+      !contactForm.subject.trim() ||
+      !contactForm.message.trim()
+    ) {
+      toast.error('Please fill in all contact fields.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(contactForm.email.trim())) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await apiJson('/api/contact', {
+        method: 'POST',
+        body: JSON.stringify(contactForm)
+      });
+      setSubmittedSuccess(true);
+      toast.success('Your message has been sent to CITE Administration!');
+      setContactForm({ name: '', email: '', subject: '', message: '' });
+    } catch (err: any) {
+      toast.error(
+        err?.message || 'Failed to send message. Please try again or email us directly.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCopyEmail = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText('rcllanto@nemsu.edu.ph');
+    setCopiedEmail(true);
+    toast.success('Copied rcllanto@nemsu.edu.ph to clipboard!');
+    setTimeout(() => setCopiedEmail(false), 2500);
+  };
+
   return (
     <div className="landing-page min-h-screen selection:bg-sky-500/30">
       <Navbar user={null} onNavigate={onNavigate} />
@@ -423,119 +482,250 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-stretch">
+              {/* Left Contact Methods */}
               <div className="space-y-3 sm:space-y-4 order-2 lg:order-1">
-                <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--glass-bg)] p-5 sm:p-6 flex items-start gap-3 sm:gap-4">
-                  <div className="p-2.5 rounded-xl shrink-0" style={{ background: 'color-mix(in srgb, var(--landing-accent) 14%, transparent)', color: 'var(--landing-accent)' }}>
+                {/* Visit Us - Google Maps */}
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=NEMSU+Tandag+Campus"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-2xl border border-[var(--border-color)] bg-[var(--glass-bg)] p-5 sm:p-6 flex items-start gap-3 sm:gap-4 hover:border-sky-500/50 hover:shadow-md transition-all group cursor-pointer block"
+                >
+                  <div
+                    className="p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform"
+                    style={{
+                      background: 'color-mix(in srgb, var(--landing-accent) 14%, transparent)',
+                      color: 'var(--landing-accent)'
+                    }}
+                  >
                     <MapPinIcon className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">
-                      Visit Us
-                    </h3>
-                    <p className="text-[var(--text-secondary)] text-sm">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                        Visit Us
+                      </h3>
+                      <span className="text-[11px] font-medium text-sky-500 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        View Map <ArrowRightIcon className="h-3 w-3" />
+                      </span>
+                    </div>
+                    <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
                       NEMSU Tandag Campus
                       <br />
                       CITE Building Office
                     </p>
                   </div>
-                </div>
-                <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--glass-bg)] p-5 sm:p-6 flex items-start gap-3 sm:gap-4">
-                  <div className="p-2.5 rounded-xl shrink-0" style={{ background: 'color-mix(in srgb, var(--landing-accent) 14%, transparent)', color: 'var(--landing-accent)' }}>
+                </a>
+
+                {/* Email Us - Mailto & Copy */}
+                <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--glass-bg)] p-5 sm:p-6 flex items-start gap-3 sm:gap-4 hover:border-sky-500/50 hover:shadow-md transition-all group">
+                  <a
+                    href="mailto:rcllanto@nemsu.edu.ph?subject=CITEzen%20Inquiry"
+                    className="p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform cursor-pointer"
+                    style={{
+                      background: 'color-mix(in srgb, var(--landing-accent) 14%, transparent)',
+                      color: 'var(--landing-accent)'
+                    }}
+                    title="Send Email"
+                  >
                     <MailIcon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">
-                      Email Us
-                    </h3>
-                    <p className="text-[var(--text-secondary)] text-sm break-all">
-                      admin@nemsu.edu.ph
-                    </p>
+                  </a>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                        Email Us
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={handleCopyEmail}
+                        className="text-[11px] font-medium px-2 py-0.5 rounded-lg border border-[var(--border-color)] hover:border-sky-500/60 text-[var(--text-secondary)] hover:text-sky-500 transition-all flex items-center gap-1 active:scale-95"
+                        title="Copy to clipboard"
+                      >
+                        {copiedEmail ? (
+                          <>
+                            <CheckIcon className="h-3 w-3 text-emerald-500" />
+                            <span className="text-emerald-500 font-semibold">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <CopyIcon className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <a
+                      href="mailto:rcllanto@nemsu.edu.ph?subject=CITEzen%20Inquiry"
+                      className="text-[var(--text-secondary)] hover:text-sky-500 text-sm break-all transition-colors inline-block"
+                    >
+                      rcllanto@nemsu.edu.ph
+                    </a>
                   </div>
                 </div>
-                <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--glass-bg)] p-5 sm:p-6 flex items-start gap-3 sm:gap-4">
-                  <div className="p-2.5 rounded-xl shrink-0" style={{ background: 'color-mix(in srgb, var(--landing-accent) 14%, transparent)', color: 'var(--landing-accent)' }}>
+
+                {/* Call Us - Dial Link */}
+                <a
+                  href="tel:+639453477555"
+                  className="rounded-2xl border border-[var(--border-color)] bg-[var(--glass-bg)] p-5 sm:p-6 flex items-start gap-3 sm:gap-4 hover:border-sky-500/50 hover:shadow-md transition-all group cursor-pointer block"
+                >
+                  <div
+                    className="p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform"
+                    style={{
+                      background: 'color-mix(in srgb, var(--landing-accent) 14%, transparent)',
+                      color: 'var(--landing-accent)'
+                    }}
+                  >
                     <PhoneIcon className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">
-                      Call Us
-                    </h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                        Call Us
+                      </h3>
+                      <span className="text-[11px] font-medium text-sky-500 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Call Now <ArrowRightIcon className="h-3 w-3" />
+                      </span>
+                    </div>
                     <p className="text-[var(--text-secondary)] text-sm">
                       (945) 347-7555
                       <br />
                       Mon-Fri, 7:30 AM - 5:00 PM
                     </p>
                   </div>
-                </div>
+                </a>
               </div>
 
-              <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--glass-bg)] p-5 sm:p-7 order-1 lg:order-2 h-full flex flex-col">
-                <h3 className="text-lg sm:text-xl font-semibold text-[var(--text-primary)] mb-5 flex items-center gap-2.5">
-                  <span className="flex h-10 w-10 rounded-xl items-center justify-center" style={{ background: 'color-mix(in srgb, var(--landing-accent) 14%, transparent)', color: 'var(--landing-accent)' }}>
-                    <MessageSquareIcon className="h-5 w-5" />
-                  </span>
-                  Send a Message
-                </h3>
-                <form
-                  className="space-y-4 flex-1 flex flex-col"
-                  onSubmit={(e) => e.preventDefault()}
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="citezen-label" htmlFor="contact-name">
-                        Your Name
-                      </label>
-                      <input
-                        id="contact-name"
-                        type="text"
-                        autoComplete="name"
-                        className="citezen-input"
-                        placeholder="Enter your name"
-                      />
+              {/* Right Send Message Form */}
+              <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--glass-bg)] p-5 sm:p-7 order-1 lg:order-2 h-full flex flex-col justify-between">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-[var(--text-primary)] mb-5 flex items-center gap-2.5">
+                    <span
+                      className="flex h-10 w-10 rounded-xl items-center justify-center"
+                      style={{
+                        background: 'color-mix(in srgb, var(--landing-accent) 14%, transparent)',
+                        color: 'var(--landing-accent)'
+                      }}
+                    >
+                      <MessageSquareIcon className="h-5 w-5" />
+                    </span>
+                    Send a Message
+                  </h3>
+
+                  {submittedSuccess ? (
+                    <div className="py-8 px-4 text-center space-y-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 my-auto">
+                      <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                        <CheckCircle2Icon className="h-6 w-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-base sm:text-lg font-bold text-emerald-950 dark:text-white">
+                          Message Sent Successfully!
+                        </h4>
+                        <p className="text-xs sm:text-sm text-emerald-900/80 dark:text-gray-300 max-w-md mx-auto leading-relaxed">
+                          Thank you for reaching out. Your inquiry has been routed to the CITE Administration, and we will get back to you shortly.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSubmittedSuccess(false)}
+                        className="landing-cta-lime px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5"
+                      >
+                        <SendIcon className="h-3.5 w-3.5" />
+                        <span>Send Another Message</span>
+                      </button>
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="citezen-label" htmlFor="contact-email">
-                        Email Address
-                      </label>
-                      <input
-                        id="contact-email"
-                        type="email"
-                        autoComplete="email"
-                        className="citezen-input"
-                        placeholder="example@nemsu.edu.ph"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="citezen-label" htmlFor="contact-subject">
-                      Subject
-                    </label>
-                    <input
-                      id="contact-subject"
-                      type="text"
-                      className="citezen-input"
-                      placeholder="How can we help?"
-                    />
-                  </div>
-                  <div className="space-y-1.5 flex-1 flex flex-col">
-                    <label className="citezen-label" htmlFor="contact-message">
-                      Message
-                    </label>
-                    <textarea
-                      id="contact-message"
-                      rows={5}
-                      className="citezen-input citezen-textarea flex-1 min-h-[140px]"
-                      placeholder="Write your message here..."
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    className="landing-cta-lime w-full min-h-[48px] py-3 px-4 text-sm inline-flex items-center justify-center gap-2"
-                  >
-                    Send Message
-                    <SendIcon className="h-4 w-4" />
-                  </button>
-                </form>
+                  ) : (
+                    <form
+                      className="space-y-4 flex-1 flex flex-col"
+                      onSubmit={handleContactSubmit}
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="citezen-label" htmlFor="contact-name">
+                            Your Name <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            id="contact-name"
+                            type="text"
+                            required
+                            autoComplete="name"
+                            value={contactForm.name}
+                            onChange={(e) =>
+                              setContactForm((prev) => ({ ...prev, name: e.target.value }))
+                            }
+                            className="citezen-input"
+                            placeholder="Enter your name"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="citezen-label" htmlFor="contact-email">
+                            Email Address <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            id="contact-email"
+                            type="email"
+                            required
+                            autoComplete="email"
+                            value={contactForm.email}
+                            onChange={(e) =>
+                              setContactForm((prev) => ({ ...prev, email: e.target.value }))
+                            }
+                            className="citezen-input"
+                            placeholder="example@nemsu.edu.ph"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="citezen-label" htmlFor="contact-subject">
+                          Subject <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          id="contact-subject"
+                          type="text"
+                          required
+                          value={contactForm.subject}
+                          onChange={(e) =>
+                            setContactForm((prev) => ({ ...prev, subject: e.target.value }))
+                          }
+                          className="citezen-input"
+                          placeholder="How can we help?"
+                        />
+                      </div>
+                      <div className="space-y-1.5 flex-1 flex flex-col">
+                        <label className="citezen-label" htmlFor="contact-message">
+                          Message <span className="text-rose-500">*</span>
+                        </label>
+                        <textarea
+                          id="contact-message"
+                          required
+                          rows={5}
+                          value={contactForm.message}
+                          onChange={(e) =>
+                            setContactForm((prev) => ({ ...prev, message: e.target.value }))
+                          }
+                          className="citezen-input citezen-textarea flex-1 min-h-[140px]"
+                          placeholder="Write your message here..."
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="landing-cta-lime w-full min-h-[48px] py-3 px-4 text-sm inline-flex items-center justify-center gap-2 disabled:opacity-60 transition-all cursor-pointer active:scale-[0.99]"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2Icon className="h-4 w-4 animate-spin" />
+                            <span>Sending Message...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Send Message</span>
+                            <SendIcon className="h-4 w-4" />
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  )}
+                </div>
               </div>
             </div>
           </div>
