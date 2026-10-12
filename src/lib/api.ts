@@ -13,7 +13,7 @@ export function getApiBase(): string {
 
 function getAuthToken(): string | null {
   try {
-    return localStorage.getItem('citezen_token');
+    return localStorage.getItem('citezen_token') || sessionStorage.getItem('citezen_token');
   } catch {
     return null;
   }
