@@ -5,6 +5,7 @@ import { concernRoutes } from './concernRoutes.js';
 import { healthRoutes } from './healthRoutes.js';
 import { notificationRoutes } from './notificationRoutes.js';
 import { userRoutes } from './userRoutes.js';
+import { contactRoutes } from './contactRoutes.js';
 
 export function registerRoutes(app: Express) {
   app.use(healthRoutes());
@@ -13,5 +14,6 @@ export function registerRoutes(app: Express) {
   app.use(userRoutes());
   app.use(concernRoutes());
   app.use(notificationRoutes());
+  app.use(contactRoutes());
 }
 
