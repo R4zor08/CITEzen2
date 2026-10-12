@@ -51,3 +51,16 @@ export const registerRequestSchema = z.object({
 });
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
 
+export const forgotPasswordRequestSchema = z.object({
+  identifier: z.string().min(1, 'Email or Student ID is required')
+});
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordRequestSchema>;
+
+export const resetPasswordRequestSchema = z.object({
+  identifier: z.string().min(1, 'Email or Student ID is required'),
+  otp: z.string().min(6, 'Verification code must be 6 digits').max(6),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters')
+});
+export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
+
+
