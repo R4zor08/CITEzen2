@@ -11,6 +11,8 @@ export type UserDoc = {
   course?: string | null;
   department?: string | null;
   profilePicture?: string | null;
+  resetPasswordOtp?: string | null;
+  resetPasswordExpires?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -24,7 +26,9 @@ const UserSchema = new Schema<UserDoc>(
     studentId: { type: String, required: false, unique: true, sparse: true, index: true },
     course: { type: String, required: false },
     department: { type: String, required: false },
-    profilePicture: { type: String, required: false }
+    profilePicture: { type: String, required: false },
+    resetPasswordOtp: { type: String, required: false },
+    resetPasswordExpires: { type: Date, required: false }
   },
   { timestamps: true }
 );
