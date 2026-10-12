@@ -1,9 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { signAuthToken } from '../middleware/auth.js';
-import { BadRequestError, ConflictError, UnauthorizedError } from '../http/httpError.js';
+import { BadRequestError, ConflictError, NotFoundError, UnauthorizedError } from '../http/httpError.js';
 import { userToApi } from '../mappers.js';
 import type { Role } from '../types.js';
 import * as users from '../repositories/userRepository.js';
+import { sendPasswordResetOtpEmail } from './emailService.js';
 
 export async function login(args: { identifier: string; password: string; role: Role }) {
   const identifier =
@@ -79,4 +80,79 @@ export async function register(args: {
   );
   return { userId: created.id };
 }
+
+export async function requestPasswordReset(identifier: string) {
+  const user = await users.findUserByIdentifier(identifier);
+  if (!user) {
+    throw new NotFoundError('No account found matching this Student ID or Email.');
+  }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+  user.resetPasswordOtp = otp;
+  user.resetPasswordExpires = expires;
+  await user.save();
+
+  await sendPasswordResetOtpEmail({
+    recipientEmail: user.email,
+    recipientName: user.name || 'CITEzen User',
+    otpCode: otp
+  });
+
+  const parts = user.email.split('@');
+  const prefix = parts[0] || '';
+  const domain = parts[1] || '';
+  const maskedName =
+    prefix.length <= 2
+      ? prefix[0] + '*'
+      : prefix[0] + '*'.repeat(Math.max(1, prefix.length - 2)) + prefix.slice(-1);
+  const maskedEmail = `${maskedName}@${domain}`;
+
+  return {
+    ok: true,
+    maskedEmail,
+    message: `A 6-digit verification code has been sent to ${maskedEmail}.`
+  };
+}
+
+export async function resetPassword(args: {
+  identifier: string;
+  otp: string;
+  newPassword: string;
+}) {
+  if (!args.newPassword || args.newPassword.length < 6) {
+    throw new BadRequestError('New password must be at least 6 characters long.');
+  }
+
+  const user = await users.findUserByIdentifier(args.identifier);
+  if (!user) {
+    throw new NotFoundError('No account found matching this Student ID or Email.');
+  }
+
+  if (!user.resetPasswordOtp || !user.resetPasswordExpires) {
+    throw new BadRequestError('No active password reset request found. Please request a new code.');
+  }
+
+  if (new Date() > new Date(user.resetPasswordExpires)) {
+    throw new BadRequestError('The verification code has expired. Please request a new code.');
+  }
+
+  if (user.resetPasswordOtp.trim() !== args.otp.trim()) {
+    throw new BadRequestError('Invalid verification code. Please check your inbox.');
+  }
+
+  const newPasswordHash = await bcrypt.hash(args.newPassword, 10);
+  user.passwordHash = newPasswordHash;
+  user.resetPasswordOtp = null;
+  user.resetPasswordExpires = null;
+  await user.save();
+
+  return {
+    ok: true,
+    message: 'Your password has been reset successfully! You can now sign in.'
+  };
+}
+
 
