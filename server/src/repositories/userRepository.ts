@@ -22,6 +22,15 @@ export async function findUserByEmail(email: string) {
   return UserModel.findOne({ email });
 }
 
+export async function findUserByIdentifier(identifier: string) {
+  const trimmed = identifier.trim();
+  let user = await UserModel.findOne({ email: trimmed.toLowerCase() });
+  if (!user) {
+    user = await UserModel.findOne({ studentId: trimmed });
+  }
+  return user;
+}
+
 export async function listUsers() {
   return UserModel.find().sort({ createdAt: 1 });
 }
