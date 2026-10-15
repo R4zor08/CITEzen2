@@ -257,6 +257,32 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
           </div>
         </div>
 
+        {/* Detailed Description */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="form-label text-sm font-bold text-white flex items-center gap-1" htmlFor="concern-desc">
+              <span>Detailed Description & Context</span>
+              <span className="text-rose-400">*</span>
+            </label>
+            <span className="text-xs text-gray-400 font-mono tabular-nums">
+              {description.length} characters
+            </span>
+          </div>
+          <p className="form-helper text-xs text-gray-400">
+            Share all specific details (course codes, professor or staff names, room locations, and requested outcome) so we can route and resolve this without delays.
+          </p>
+          <textarea
+            id="concern-desc"
+            name="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+            rows={5}
+            className="form-input-field w-full px-4 py-3 rounded-xl bg-dark-800/80 border border-white/10 text-white placeholder-gray-500 text-sm leading-relaxed focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-inner custom-scrollbar"
+            placeholder="Describe what occurred, who you spoke with, when it took place, and how the department can assist you..."
+          />
+        </div>
+
         {/* Urgency & Turnaround Time */}
         <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between">
@@ -312,32 +338,6 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
               );
             })}
           </div>
-        </div>
-
-        {/* Detailed Description */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label className="form-label text-sm font-bold text-white flex items-center gap-1" htmlFor="concern-desc">
-              <span>Detailed Description & Context</span>
-              <span className="text-rose-400">*</span>
-            </label>
-            <span className="text-xs text-gray-400 font-mono tabular-nums">
-              {description.length} characters
-            </span>
-          </div>
-          <p className="form-helper text-xs text-gray-400">
-            Share all specific details (course codes, professor or staff names, room locations, and requested outcome) so we can route and resolve this without delays.
-          </p>
-          <textarea
-            id="concern-desc"
-            name="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            rows={5}
-            className="form-input-field w-full px-4 py-3 rounded-xl bg-dark-800/80 border border-white/10 text-white placeholder-gray-500 text-sm leading-relaxed focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-inner custom-scrollbar"
-            placeholder="Describe what occurred, who you spoke with, when it took place, and how the department can assist you..."
-          />
         </div>
 
         {/* Supporting Documents & Verification */}

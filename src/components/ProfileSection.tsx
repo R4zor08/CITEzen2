@@ -22,7 +22,7 @@ import { useTheme, ThemePreference } from '../hooks/useTheme';
 
 interface ProfileSectionProps {
   user: User;
-  onUpdateProfile: (data: Partial<User>) => Promise<void>;
+  onUpdateProfile: (data: Partial<User> & { password?: string }) => Promise<void>;
 }
 
 type SettingsTab = 'profile' | 'security' | 'theme';
@@ -415,9 +415,65 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
-        if (editingCard !== 'identity') setEditingCard('identity');
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCancelAvatar = () => {
+    setAvatarPreview(user.profilePicture || null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleSaveAvatar = async () => {
+    if (!avatarPreview) return;
+    setIsLoading(true);
+    try {
+      await onUpdateProfile({
+        profilePicture: avatarPreview
+      });
+      toast.success('Profile photo updated successfully');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to update profile photo');
+      setAvatarPreview(user.profilePicture || null);
+    } finally {
+      setIsLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSavePersonal = async () => {
+    const trimmedFirst = formData.firstName.trim();
+    const trimmedLast = formData.lastName.trim();
+    const trimmedEmail = formData.email.trim();
+
+    if (!trimmedFirst) {
+      toast.error('First name is required');
+      return;
+    }
+    if (!trimmedEmail) {
+      toast.error('Email address is required');
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    const newFullName = joinName(trimmedFirst, trimmedLast);
+
+    setIsLoading(true);
+    try {
+      await onUpdateProfile({
+        name: newFullName,
+        email: trimmedEmail
+      });
+      toast.success('Personal information updated successfully');
+      setEditingCard(null);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to update personal information');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -608,12 +664,12 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
                     <div className="flex items-center gap-4 min-w-0">
                       {avatarNode}
                       <div className="min-w-0">
-                        {editingCard === 'identity' ? (
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
+                        {user.role !== 'student' && editingCard === 'identity' ? (
+                          <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
                             className="profile-input max-w-xs mb-1.5 font-semibold"
                           />
                         ) : (
@@ -627,15 +683,47 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
                         <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
                           {subtitle}
                         </p>
-                </div>
-              </div>
-                    <EditButton
-                      editing={editingCard === 'identity'}
-                      onEdit={() => startEdit('identity')}
-                      onCancel={cancelEdit}
-                    />
+                      </div>
+                    </div>
+                    {user.role !== 'student' && (
+                      <EditButton
+                        editing={editingCard === 'identity'}
+                        onEdit={() => startEdit('identity')}
+                        onCancel={cancelEdit}
+                      />
+                    )}
                   </div>
-                  {saveBar(editingCard === 'identity')}
+                  {user.role !== 'student' && saveBar(editingCard === 'identity')}
+                  {avatarPreview && avatarPreview !== (user.profilePicture || null) && (
+                    <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 mt-4 border-t border-[var(--border-color)] animate-fade-in">
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        New profile photo selected. Save to update your profile.
+                      </p>
+                      <div className="flex items-center gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={handleCancelAvatar}
+                          disabled={isLoading}
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 border border-white/10 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveAvatar}
+                          disabled={isLoading}
+                          className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-semibold shadow-md shadow-sky-500/20 transition-all disabled:opacity-70"
+                        >
+                          {isLoading ? (
+                            <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <SaveIcon className="h-3.5 w-3.5" />
+                          )}
+                          Save Photo
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </section>
 
                 <section className="profile-card">
@@ -680,7 +768,7 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
                         editingCard === 'personal' ? formData.email : user.email
                       }
                       editing={editingCard === 'personal'}
-                      disabled={user.role === 'student'}
+                      disabled={false}
                       onChange={handleChange}
                       onCopy={
                         editingCard === 'personal'
@@ -693,10 +781,35 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
                       name="role"
                       value={roleLabel}
                       editing={false}
+                      disabled={true}
                       onChange={handleChange}
                     />
                   </div>
-                  {saveBar(editingCard === 'personal')}
+                  {editingCard === 'personal' && (
+                    <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-5 mt-5 border-t border-[var(--border-color)]">
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        disabled={isLoading}
+                        className="px-4 py-2 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 border border-white/10 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSavePersonal}
+                        disabled={isLoading}
+                        className="flex items-center justify-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-semibold shadow-md shadow-sky-500/20 transition-all disabled:opacity-70"
+                      >
+                        {isLoading ? (
+                          <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <SaveIcon className="h-3.5 w-3.5" />
+                        )}
+                        Save
+                      </button>
+                    </div>
+                  )}
                 </section>
 
                 <section className="profile-card">
@@ -708,7 +821,7 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
                           ? 'Assignment details'
                           : 'Account details'}
                     </h3>
-                    {(user.role === 'student' || user.role === 'staff') && (
+                    {user.role === 'staff' && (
                       <EditButton
                         editing={editingCard === 'academic'}
                         onEdit={() => startEdit('academic')}
@@ -735,13 +848,8 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
                         <FieldBlock
                           label="Course / Program"
                           name="course"
-                          value={
-                            editingCard === 'academic'
-                              ? formData.course
-                              : user.course || '—'
-                          }
-                          editing={editingCard === 'academic'}
-                          placeholder="e.g., BSIT, BSCS"
+                          value={user.course || '—'}
+                          editing={false}
                           onChange={handleChange}
                         />
                         <FieldBlock
@@ -817,7 +925,7 @@ export function ProfileSection({ user, onUpdateProfile }: ProfileSectionProps) {
                       </>
               )}
             </div>
-                  {saveBar(editingCard === 'academic')}
+                  {user.role === 'staff' && saveBar(editingCard === 'academic')}
                 </section>
               </motion.div>
             )}
