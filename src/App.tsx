@@ -87,7 +87,7 @@ export function App() {
     handleNavigate('landing');
   };
 
-  const handleUpdateUser = async (data: Partial<User>) => {
+  const handleUpdateUser = async (data: Partial<User> & { password?: string }) => {
     await updateUser(data);
   };
 
