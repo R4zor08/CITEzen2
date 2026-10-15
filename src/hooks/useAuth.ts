@@ -103,7 +103,7 @@ export function useAuth() {
     sessionStorage.removeItem('citezen_token');
   };
 
-  const updateUser = async (updates: Partial<User>) => {
+  const updateUser = async (updates: Partial<User> & { password?: string }) => {
     if (!user) return;
 
     const payload: Record<string, unknown> = {};
@@ -114,6 +114,9 @@ export function useAuth() {
     if (updates.profilePicture !== undefined) {
       payload.profilePicture = updates.profilePicture;
     }
+    if (updates.password !== undefined) {
+      payload.password = updates.password;
+    }
 
     const updated = await apiJson<User>(`/api/users/${user.id}`, {
       method: 'PATCH',
@@ -121,7 +124,15 @@ export function useAuth() {
     });
 
     setUser(updated);
-    localStorage.setItem('citezen_user', JSON.stringify(updated));
+    if (localStorage.getItem('citezen_user')) {
+      localStorage.setItem('citezen_user', JSON.stringify(updated));
+    }
+    if (sessionStorage.getItem('citezen_user')) {
+      sessionStorage.setItem('citezen_user', JSON.stringify(updated));
+    }
+    if (!localStorage.getItem('citezen_user') && !sessionStorage.getItem('citezen_user')) {
+      localStorage.setItem('citezen_user', JSON.stringify(updated));
+    }
     return updated;
   };
 
