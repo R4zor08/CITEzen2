@@ -24,7 +24,7 @@ interface StudentDashboardProps {
   onLogout: () => void;
   onNavigate: (page: string) => void;
   concernsData: any;
-  onUpdateUser?: (data: Partial<User>) => Promise<void>;
+  onUpdateUser?: (data: Partial<User> & { password?: string }) => Promise<void>;
 }
 
 export function StudentDashboard({
