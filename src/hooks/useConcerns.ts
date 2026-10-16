@@ -199,12 +199,25 @@ export function useConcerns(currentUser: User | null) {
     }
   };
 
-  const markNotificationRead = async (id: string) => {
+  const markNotificationRead = async (id: string, read = true) => {
     try {
-      await apiJson(`/api/notifications/${id}/read`, { method: 'PATCH' });
+      await apiJson(`/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        body: JSON.stringify({ read })
+      });
       await refreshNotifications();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to update notification');
+      throw e;
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    try {
+      await apiJson(`/api/notifications/${id}`, { method: 'DELETE' });
+      await refreshNotifications();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to delete notification');
       throw e;
     }
   };
@@ -265,6 +278,7 @@ export function useConcerns(currentUser: User | null) {
     assignConcern,
     confirmConcern,
     markNotificationRead,
+    deleteNotification,
     markAllNotificationsRead,
     clearAllNotifications,
     getByStudent,
