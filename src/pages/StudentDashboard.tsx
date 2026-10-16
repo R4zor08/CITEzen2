@@ -62,8 +62,7 @@ export function StudentDashboard({
     total: myConcerns.length,
     pending: myConcerns.filter((c: any) => c.status === 'pending').length,
     inProgress: myConcerns.filter((c: any) => c.status === 'in-progress').length,
-    resolved: myConcerns.filter((c: any) => c.status === 'resolved').length,
-    rejected: myConcerns.filter((c: any) => c.status === 'rejected').length
+    resolved: myConcerns.filter((c: any) => c.status === 'resolved').length
   };
 
   const getGreeting = () => {
@@ -77,8 +76,7 @@ export function StudentDashboard({
     { id: 'all', label: 'All', count: stats.total, dot: 'bg-gray-400' },
     { id: 'pending', label: 'Pending', count: stats.pending, dot: 'bg-amber-400' },
     { id: 'in-progress', label: 'In Progress', count: stats.inProgress, dot: 'bg-sky-400' },
-    { id: 'resolved', label: 'Resolved', count: stats.resolved, dot: 'bg-emerald-400' },
-    { id: 'rejected', label: 'Rejected', count: stats.rejected, dot: 'bg-rose-400' }
+    { id: 'resolved', label: 'Resolved', count: stats.resolved, dot: 'bg-emerald-400' }
   ];
 
   const selectedConcern = concerns.find((c: any) => c.id === selectedConcernId);
@@ -112,6 +110,7 @@ export function StudentDashboard({
         onLogout={onLogout}
         onNavigate={onNavigate}
         concernsData={concernsData}
+        onSelectConcern={setSelectedConcernId}
       >
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
@@ -218,17 +217,17 @@ export function StudentDashboard({
             <motion.div variants={itemVariants}>
               <div className="flex items-center justify-between mb-3.5 sm:mb-4">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                     Recent Activity
                   </h2>
-                  <p className="text-xs sm:text-sm text-gray-400">
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400">
                     Latest updates on your submitted issues
                   </p>
                 </div>
                 {myConcerns.length > 0 && (
                   <button
                     onClick={() => setActiveTab('my-concerns')}
-                    className="dashboard-view-all text-xs sm:text-sm font-semibold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1"
+                    className="dashboard-view-all text-xs sm:text-sm font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-500 dark:hover:text-sky-300 transition-colors flex items-center gap-1"
                   >
                     <span>View All ({myConcerns.length})</span>
                   </button>
@@ -251,14 +250,14 @@ export function StudentDashboard({
                   ))}
                 </div>
               ) : (
-                <div className="glass-panel p-8 sm:p-12 text-center rounded-2xl border border-white/10 flex flex-col items-center justify-center">
-                  <div className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 text-gray-400">
-                    <FileTextIcon className="h-7 w-7 text-gray-500" />
+                <div className="glass-panel p-8 sm:p-12 text-center rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-dark-900/60 shadow-sm flex flex-col items-center justify-center">
+                  <div className="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center mb-3 text-slate-500 dark:text-gray-400">
+                    <FileTextIcon className="h-7 w-7 text-slate-400 dark:text-gray-500" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-1.5">
                     No concerns submitted yet
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-400 mb-5 max-w-md leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 mb-5 max-w-md leading-relaxed">
                     Have an issue with academics, departments, or facilities? Submit a concern and track its resolution in real-time.
                   </p>
                   <button
@@ -320,11 +319,11 @@ export function StudentDashboard({
             >
               <div>
                 <div className="flex items-center gap-2.5">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                     My Concerns
                   </h1>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-400 mt-1">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 mt-1">
                   Track, filter, and review the live status of all your submitted concerns.
                 </p>
               </div>
@@ -342,20 +341,20 @@ export function StudentDashboard({
             <motion.div variants={itemVariants} className="space-y-3">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <SearchIcon className="h-4 w-4 text-gray-400" />
+                  <SearchIcon className="h-4 w-4 text-slate-400 dark:text-gray-400" />
                 </div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by title, ID, or department..."
-                  className="dashboard-search-input w-full pl-10 pr-9 py-2.5 bg-dark-800/90 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-inner"
+                  className="dashboard-search-input w-full pl-10 pr-9 py-2.5 bg-white dark:bg-dark-800/90 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-xs"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-white"
                   >
                     <XIcon className="h-4 w-4" />
                   </button>
@@ -374,7 +373,7 @@ export function StudentDashboard({
                       className={`dashboard-filter-pill px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 active:scale-95 touch-manipulation ${
                         isActive
                           ? 'filter-pill--active bg-sky-500 text-white shadow-md shadow-sky-500/25 border border-sky-400'
-                          : 'filter-pill--inactive bg-dark-800/80 hover:bg-dark-800 text-gray-400 hover:text-gray-200 border border-white/10'
+                          : 'filter-pill--inactive bg-white dark:bg-dark-800/80 hover:bg-slate-50 dark:hover:bg-dark-800 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200 border border-slate-200 dark:border-white/10 shadow-xs'
                       }`}
                     >
                       <span
@@ -387,7 +386,7 @@ export function StudentDashboard({
                         className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
                           isActive
                             ? 'bg-white/20 text-white'
-                            : 'bg-white/5 text-gray-400'
+                            : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400'
                         }`}
                       >
                         {pill.count}
@@ -416,12 +415,12 @@ export function StudentDashboard({
                   ))}
                 </div>
               ) : myConcerns.length === 0 ? (
-                <div className="glass-panel p-8 sm:p-12 text-center rounded-2xl border border-white/10 flex flex-col items-center justify-center">
-                  <div className="h-16 w-16 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mb-4 text-sky-400">
+                <div className="glass-panel p-8 sm:p-12 text-center rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-dark-900/60 shadow-sm flex flex-col items-center justify-center">
+                  <div className="h-16 w-16 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mb-4 text-sky-500 dark:text-sky-400">
                     <FileTextIcon className="h-8 w-8" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">No concerns yet</h3>
-                  <p className="text-sm text-gray-400 mb-6 max-w-md leading-relaxed">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">No concerns yet</h3>
+                  <p className="text-sm text-slate-500 dark:text-gray-400 mb-6 max-w-md leading-relaxed">
                     You haven't submitted any concerns yet. If you have an academic, facility, or administrative concern, submit one anytime.
                   </p>
                   <button
@@ -432,12 +431,12 @@ export function StudentDashboard({
                   </button>
                 </div>
               ) : (
-                <div className="glass-panel p-8 sm:p-12 text-center rounded-2xl border border-white/10 flex flex-col items-center justify-center">
-                  <div className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 text-gray-400">
+                <div className="glass-panel p-8 sm:p-12 text-center rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-dark-900/60 shadow-sm flex flex-col items-center justify-center">
+                  <div className="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center mb-3 text-slate-400 dark:text-gray-400">
                     <SearchIcon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1.5">No matching concerns</h3>
-                  <p className="text-sm text-gray-400 mb-4 max-w-sm">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">No matching concerns</h3>
+                  <p className="text-sm text-slate-500 dark:text-gray-400 mb-4 max-w-sm">
                     We couldn't find any concerns matching your current filter or search query.
                   </p>
                   <button
@@ -445,7 +444,7 @@ export function StudentDashboard({
                       setFilterStatus('all');
                       setSearchQuery('');
                     }}
-                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition-colors"
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-white text-xs font-semibold border border-slate-200 dark:border-white/10 transition-colors"
                   >
                     Reset Filters
                   </button>

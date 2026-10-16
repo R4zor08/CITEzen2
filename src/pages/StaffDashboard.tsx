@@ -33,6 +33,24 @@ function getGreeting() {
   return 'Good evening';
 }
 
+const PRIORITY_ORDER: Record<string, number> = {
+  urgent: 4,
+  high: 3,
+  medium: 2,
+  low: 1
+};
+
+function compareConcernsByPriorityAndDate(a: any, b: any) {
+  const pA = PRIORITY_ORDER[a.priority?.toLowerCase()] ?? 0;
+  const pB = PRIORITY_ORDER[b.priority?.toLowerCase()] ?? 0;
+  if (pA !== pB) {
+    return pB - pA; // Urgent concerns prioritized at the top
+  }
+  const dateA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+  const dateB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+  return dateB - dateA;
+}
+
 export function StaffDashboard({
   user,
   onLogout,
@@ -46,34 +64,37 @@ export function StaffDashboard({
   const [searchQuery, setSearchQuery] = useState('');
   const { concerns, updateStatus, addComment, forwardConcern } = concernsData;
 
-  // Staff sees department concerns plus any concerns assigned to them (even cross-department).
-  const deptConcerns = concerns.filter((c: any) => c.department === user.department);
+  // Staff sees concerns assigned to them
   const assignedConcerns = concerns.filter((c: any) => c.assignedTo === user.id);
-  const targetConcerns = activeTab === 'assigned' ? assignedConcerns : deptConcerns;
+  const targetConcerns = assignedConcerns;
 
-  const filteredConcerns = targetConcerns.filter((c: any) => {
-    const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return matchesStatus;
-    const matchesSearch =
-      c.title?.toLowerCase().includes(q) ||
-      c.id?.toLowerCase().includes(q) ||
-      c.studentName?.toLowerCase().includes(q) ||
-      c.description?.toLowerCase().includes(q) ||
-      c.category?.toLowerCase().includes(q) ||
-      c.subcategory?.toLowerCase().includes(q);
-    return matchesStatus && matchesSearch;
-  });
+  const filteredConcerns = targetConcerns
+    .filter((c: any) => {
+      const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
+      const q = searchQuery.toLowerCase().trim();
+      if (!q) return matchesStatus;
+      const matchesSearch =
+        c.title?.toLowerCase().includes(q) ||
+        c.id?.toLowerCase().includes(q) ||
+        c.studentName?.toLowerCase().includes(q) ||
+        c.description?.toLowerCase().includes(q) ||
+        c.category?.toLowerCase().includes(q) ||
+        c.subcategory?.toLowerCase().includes(q);
+      return matchesStatus && matchesSearch;
+    })
+    .sort(compareConcernsByPriorityAndDate);
 
   const recentAssigned = [...assignedConcerns]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .sort(compareConcernsByPriorityAndDate)
     .slice(0, 3);
 
   const stats = {
-    totalDept: deptConcerns.length,
+    total: assignedConcerns.length,
     assigned: assignedConcerns.length,
-    pending: deptConcerns.filter((c: any) => c.status === 'pending').length,
-    resolved: deptConcerns.filter((c: any) => c.status === 'resolved').length
+    pending: assignedConcerns.filter((c: any) => c.status === 'pending').length,
+    inProgress: assignedConcerns.filter((c: any) => c.status === 'in-progress').length,
+    resolved: assignedConcerns.filter((c: any) => c.status === 'resolved').length,
+    urgent: assignedConcerns.filter((c: any) => c.priority === 'urgent').length
   };
 
   const selectedConcern = concerns.find((c: any) => c.id === selectedConcernId);
@@ -102,12 +123,6 @@ export function StaffDashboard({
       label: 'Resolved',
       count: targetConcerns.filter((c: any) => c.status === 'resolved').length,
       dot: 'bg-emerald-500 dark:bg-emerald-400'
-    },
-    {
-      id: 'rejected' as const,
-      label: 'Rejected',
-      count: targetConcerns.filter((c: any) => c.status === 'rejected').length,
-      dot: 'bg-rose-500 dark:bg-rose-400'
     }
   ];
 
@@ -141,6 +156,7 @@ export function StaffDashboard({
       onLogout={onLogout}
       onNavigate={onNavigate}
       concernsData={concernsData}
+      onSelectConcern={setSelectedConcernId}
     >
       {/* Dashboard Tab */}
       {activeTab === 'dashboard' && (
@@ -169,8 +185,8 @@ export function StaffDashboard({
                 {stats.assigned > 0
                   ? `You have ${stats.assigned} concern${
                       stats.assigned === 1 ? '' : 's'
-                    } assigned directly to you and ${stats.pending} pending review across your department.`
-                  : `You're all caught up on your personal queue. There are ${stats.pending} pending concerns in your department.`}
+                    } assigned directly to you for review, status updates, and resolution.`
+                  : "You're all caught up on your personal queue."}
               </p>
             </div>
           </motion.div>
@@ -181,27 +197,10 @@ export function StaffDashboard({
             className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4"
           >
             <StatCard
-              title="Dept. Concerns"
-              value={stats.totalDept}
+              title="Total Assigned"
+              value={stats.assigned}
               icon={InboxIcon}
               color="blue"
-              trend={{
-                value: 15,
-                isPositive: true
-              }}
-              onClick={() => {
-                setFilterStatus('all');
-                setSearchQuery('');
-                setActiveTab('all-concerns');
-              }}
-              subtitle="All department tickets"
-            />
-
-            <StatCard
-              title="Assigned to You"
-              value={stats.assigned}
-              icon={UserCheckIcon}
-              color="purple"
               onClick={() => {
                 setFilterStatus('all');
                 setSearchQuery('');
@@ -218,9 +217,22 @@ export function StaffDashboard({
               onClick={() => {
                 setFilterStatus('pending');
                 setSearchQuery('');
-                setActiveTab('all-concerns');
+                setActiveTab('assigned');
               }}
-              subtitle="Needs staff review"
+              subtitle="Awaiting your review"
+            />
+
+            <StatCard
+              title="In Progress"
+              value={stats.inProgress}
+              icon={UserCheckIcon}
+              color="purple"
+              onClick={() => {
+                setFilterStatus('in-progress');
+                setSearchQuery('');
+                setActiveTab('assigned');
+              }}
+              subtitle="Currently being handled"
             />
 
             <StatCard
@@ -231,7 +243,7 @@ export function StaffDashboard({
               onClick={() => {
                 setFilterStatus('resolved');
                 setSearchQuery('');
-                setActiveTab('all-concerns');
+                setActiveTab('assigned');
               }}
               subtitle="Closed & completed"
             />
@@ -291,19 +303,9 @@ export function StaffDashboard({
                 <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] mb-1.5">
                   All caught up!
                 </h3>
-                <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-md leading-relaxed mb-4">
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-md leading-relaxed">
                   You don't have any pending concerns currently assigned to your queue.
                 </p>
-                <button
-                  onClick={() => {
-                    setFilterStatus('pending');
-                    setSearchQuery('');
-                    setActiveTab('all-concerns');
-                  }}
-                  className="px-5 py-2.5 rounded-xl border border-sky-200 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 text-sky-700 dark:text-sky-400 text-xs sm:text-sm font-semibold transition-all active:scale-95 shadow-xs"
-                >
-                  Browse Department Queue ({stats.pending} pending)
-                </button>
               </div>
             )}
           </motion.div>
@@ -322,8 +324,8 @@ export function StaffDashboard({
         />
       )}
 
-      {/* Assigned to Me & Department Concerns Tabs */}
-      {(activeTab === 'assigned' || activeTab === 'all-concerns') && (
+      {/* Assigned to Me Tab */}
+      {activeTab === 'assigned' && (
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -336,12 +338,10 @@ export function StaffDashboard({
             className="pb-1"
           >
             <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
-              {activeTab === 'assigned' ? 'Assigned to Me' : 'Department Concerns'}
+              Assigned to Me
             </h1>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-              {activeTab === 'assigned'
-                ? 'Concerns directly assigned to you for review, status updates, and resolution.'
-                : `All concerns submitted under the ${user.department || 'academic'} department.`}
+              Concerns directly assigned to you for review, status updates, and resolution.
             </p>
           </motion.div>
 
@@ -355,7 +355,7 @@ export function StaffDashboard({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${activeTab === 'assigned' ? 'assigned' : 'department'} concerns by title, ID, category, or student...`}
+                placeholder="Search assigned concerns by title, ID, category, or student..."
                 className="dashboard-search-input w-full pl-10 pr-9 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-inner"
               />
               {searchQuery && (
@@ -438,9 +438,7 @@ export function StaffDashboard({
                 <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-md leading-relaxed mb-4">
                   {searchQuery || filterStatus !== 'all'
                     ? `No concerns match your search "${searchQuery || ''}" with status "${filterStatus}".`
-                    : activeTab === 'assigned'
-                      ? 'You currently have no concerns assigned to you.'
-                      : 'There are no concerns in this department yet.'}
+                    : 'You currently have no concerns assigned to you.'}
                 </p>
                 {(searchQuery || filterStatus !== 'all') && (
                   <button

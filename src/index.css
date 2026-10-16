@@ -996,33 +996,45 @@ body {
 }
 
 /* ===== STATUS & PRIORITY BADGES IN LIGHT MODE ===== */
-.light .status-badge--pending,
-.light .priority-badge--high {
+.light .status-badge--pending {
   background: #FEF3C7 !important;
   color: #92400E !important;
   border-color: #FCD34D !important;
 }
-.light .status-badge--in-progress,
-.light .priority-badge--medium {
+.light .priority-badge--high {
+  background: #FEF9C3 !important;
+  color: #854D0E !important;
+  border-color: #FDE047 !important;
+}
+.light .status-badge--in-progress {
   background: #E0F2FE !important;
   color: #075985 !important;
   border-color: #7DD3FC !important;
+}
+.light .priority-badge--medium {
+  background: #DBEAFE !important;
+  color: #1D4ED8 !important;
+  border-color: #93C5FD !important;
 }
 .light .status-badge--resolved {
   background: #D1FAE5 !important;
   color: #065F46 !important;
   border-color: #6EE7B7 !important;
 }
-.light .status-badge--rejected,
-.light .priority-badge--urgent {
+.light .status-badge--rejected {
   background: #FFE4E6 !important;
   color: #9F1239 !important;
   border-color: #FDA4AF !important;
 }
+.light .priority-badge--urgent {
+  background: #FEE2E2 !important;
+  color: #B91C1C !important;
+  border-color: #FCA5A5 !important;
+}
 .light .priority-badge--low {
-  background: #F1F5F9 !important;
-  color: #334155 !important;
-  border-color: #CBD5E1 !important;
+  background: #D1FAE5 !important;
+  color: #065F46 !important;
+  border-color: #6EE7B7 !important;
 }
 
 /* ===== CONCERN CARD LIGHT MODE ===== */

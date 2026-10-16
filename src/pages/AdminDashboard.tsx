@@ -9,8 +9,9 @@ import { AnalyticsChart } from '../components/AnalyticsChart';
 import { ProfileSection } from '../components/ProfileSection';
 import { AddDepartmentModal } from '../components/AddDepartmentModal';
 import { EditUserModal } from '../components/EditUserModal';
-import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import { CustomSelect, CustomSelectOption } from '../components/CustomSelect';
+import { DepartmentConcernsModal } from '../components/DepartmentConcernsModal';
+import { AdminConcernCard } from '../components/AdminConcernCard';
 import {
   FileTextIcon,
   CheckCircle2Icon,
@@ -23,12 +24,17 @@ import {
   ActivityIcon,
   PlusIcon,
   EditIcon,
-  CalendarIcon,
-  ChevronRightIcon,
-  MessageSquareIcon,
   ClockIcon,
   AlertCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  LayoutGridIcon,
+  ListIcon,
+  GraduationCapIcon,
+  ClipboardListIcon,
+  WrenchIcon,
+  LaptopIcon,
+  CreditCardIcon,
+  ArrowRightIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiJson } from '../lib/api';
@@ -84,6 +90,8 @@ export function AdminDashboard({
   const [editingUser, setEditingUser] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState<ConcernStatus | 'all' | 'pending-review' | 'urgent'>('all');
   const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
+  const [activeDepartmentFolder, setActiveDepartmentFolder] = useState<string | null>(null);
+  const [concernsViewMode, setConcernsViewMode] = useState<'folders' | 'feed'>('folders');
 
   // User management search & role filter
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -104,11 +112,24 @@ export function AdminDashboard({
     return () => clearInterval(id);
   }, [fetchUsers]);
 
-  // Real-time departments from localStorage
+  // Real-time departments from localStorage (synced with official departments list)
   const [localDepartments, setLocalDepartments] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('citezen_departments');
-      return stored ? JSON.parse(stored) : departmentsList;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const cleaned = parsed.filter((d: string) => d && d !== 'CITE');
+          const hasAllOfficial = departmentsList.every((d) => cleaned.includes(d));
+          if (!hasAllOfficial || parsed.includes('CITE')) {
+            localStorage.setItem('citezen_departments', JSON.stringify(departmentsList));
+            return departmentsList;
+          }
+          return cleaned;
+        }
+      }
+      localStorage.setItem('citezen_departments', JSON.stringify(departmentsList));
+      return departmentsList;
     } catch {
       return departmentsList;
     }
@@ -120,10 +141,13 @@ export function AdminDashboard({
         const storedDepts = localStorage.getItem('citezen_departments');
         if (storedDepts) {
           const parsed = JSON.parse(storedDepts);
-          setLocalDepartments((prev: string[]) => {
-            if (prev.length !== parsed.length) return parsed;
-            return prev;
-          });
+          if (Array.isArray(parsed)) {
+            const cleaned = parsed.filter((d: string) => d && d !== 'CITE');
+            setLocalDepartments((prev: string[]) => {
+              if (JSON.stringify(prev) !== JSON.stringify(cleaned)) return cleaned;
+              return prev;
+            });
+          }
         }
       } catch {
         /* ignore corrupt localStorage */
@@ -155,11 +179,25 @@ export function AdminDashboard({
   const [categoryDraft, setCategoryDraft] = useState<Record<string, string>>({});
   const [isConfirming, setIsConfirming] = useState<Record<string, boolean>>({});
 
-  const pendingReviewCount = concerns.filter(
+  // Normalize concerns so any legacy 'CITE' or non-department value belongs strictly to the Departments section
+  const normalizedConcerns = useMemo(() => {
+    return concerns.map((c: any) => {
+      const d = c.department?.trim();
+      if (!d || d === 'CITE' || !localDepartments.includes(d)) {
+        return {
+          ...c,
+          department: 'Academic Affairs'
+        };
+      }
+      return c;
+    });
+  }, [concerns, localDepartments]);
+
+  const pendingReviewCount = normalizedConcerns.filter(
     (c: any) => c.adminReviewStatus === 'pending' || !c.isConfirmed
   ).length;
 
-  const filteredConcerns = concerns.filter((c: any) => {
+  const filteredConcerns = normalizedConcerns.filter((c: any) => {
     const matchesStatus =
       filterStatus === 'all'
         ? true
@@ -186,10 +224,10 @@ export function AdminDashboard({
   );
 
   const stats = {
-    total: concerns.length,
+    total: normalizedConcerns.length,
     pendingReview: pendingReviewCount,
-    resolved: concerns.filter((c: any) => c.status === 'resolved').length,
-    urgent: concerns.filter(
+    resolved: normalizedConcerns.filter((c: any) => c.status === 'resolved').length,
+    urgent: normalizedConcerns.filter(
       (c: any) => c.priority === 'urgent' || c.priority === 'high'
     ).length,
     users: registeredUsers.filter((u: any) => u.role !== 'admin').length
@@ -275,7 +313,6 @@ export function AdminDashboard({
     { value: 'pending', label: 'Pending', icon: <ClockIcon className="h-4 w-4 text-amber-500" /> },
     { value: 'in-progress', label: 'In Progress', icon: <AlertCircleIcon className="h-4 w-4 text-sky-500" /> },
     { value: 'resolved', label: 'Resolved', icon: <CheckCircle2Icon className="h-4 w-4 text-emerald-500" /> },
-    { value: 'rejected', label: 'Rejected', icon: <XCircleIcon className="h-4 w-4 text-rose-500" /> },
     {
       value: 'urgent',
       label: 'Urgent Priority',
@@ -402,7 +439,139 @@ export function AdminDashboard({
     }
   ].filter((d) => d.value > 0);
 
-  const selectedConcern = concerns.find((c: any) => c.id === selectedConcernId);
+  const selectedConcern = normalizedConcerns.find((c: any) => c.id === selectedConcernId);
+
+  // Departments list strictly from the official Departments section (no foreign or non-department categories)
+  const folderDepartments = useMemo(() => {
+    return localDepartments.filter((d) => d && d !== 'CITE');
+  }, [localDepartments]);
+
+  // Visual folder color themes per department with unit codes and glow accents
+  const deptFolderThemes: Record<
+    string,
+    {
+      code: string;
+      border: string;
+      badgeBg: string;
+      badgeText: string;
+      iconBg: string;
+      iconText: string;
+      gradient: string;
+      progressGradient: string;
+      glow: string;
+    }
+  > = {
+    'Academic Affairs': {
+      code: 'ACAD-01',
+      border: 'hover:border-blue-500/70 hover:shadow-blue-500/15',
+      badgeBg: 'bg-blue-50 dark:bg-blue-500/15',
+      badgeText: 'text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30',
+      iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/25',
+      iconText: 'text-white',
+      gradient: 'from-blue-600 to-indigo-600',
+      progressGradient: 'from-blue-500 via-indigo-500 to-sky-400',
+      glow: 'bg-blue-500/10 dark:bg-blue-500/20'
+    },
+    'Registrar': {
+      code: 'REG-02',
+      border: 'hover:border-emerald-500/70 hover:shadow-emerald-500/15',
+      badgeBg: 'bg-emerald-50 dark:bg-emerald-500/15',
+      badgeText: 'text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30',
+      iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25',
+      iconText: 'text-white',
+      gradient: 'from-emerald-600 to-teal-600',
+      progressGradient: 'from-emerald-500 via-teal-500 to-cyan-400',
+      glow: 'bg-emerald-500/10 dark:bg-emerald-500/20'
+    },
+    'Maintenance': {
+      code: 'MAINT-03',
+      border: 'hover:border-amber-500/70 hover:shadow-amber-500/15',
+      badgeBg: 'bg-amber-50 dark:bg-amber-500/15',
+      badgeText: 'text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30',
+      iconBg: 'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/25',
+      iconText: 'text-white',
+      gradient: 'from-amber-600 to-orange-600',
+      progressGradient: 'from-amber-500 via-orange-500 to-yellow-400',
+      glow: 'bg-amber-500/10 dark:bg-amber-500/20'
+    },
+    'Student Affairs': {
+      code: 'OSA-04',
+      border: 'hover:border-purple-500/70 hover:shadow-purple-500/15',
+      badgeBg: 'bg-purple-50 dark:bg-purple-500/15',
+      badgeText: 'text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/30',
+      iconBg: 'bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-md shadow-purple-500/25',
+      iconText: 'text-white',
+      gradient: 'from-purple-600 to-violet-600',
+      progressGradient: 'from-purple-500 via-violet-500 to-indigo-400',
+      glow: 'bg-purple-500/10 dark:bg-purple-500/20'
+    },
+    'Administration': {
+      code: 'ADMIN-05',
+      border: 'hover:border-sky-500/70 hover:shadow-sky-500/15',
+      badgeBg: 'bg-sky-50 dark:bg-sky-500/15',
+      badgeText: 'text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30',
+      iconBg: 'bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25',
+      iconText: 'text-white',
+      gradient: 'from-sky-600 to-blue-600',
+      progressGradient: 'from-sky-500 via-blue-500 to-cyan-400',
+      glow: 'bg-sky-500/10 dark:bg-sky-500/20'
+    },
+    'IT Support': {
+      code: 'IT-06',
+      border: 'hover:border-cyan-500/70 hover:shadow-cyan-500/15',
+      badgeBg: 'bg-cyan-50 dark:bg-cyan-500/15',
+      badgeText: 'text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-500/30',
+      iconBg: 'bg-gradient-to-br from-cyan-500 to-teal-600 text-white shadow-md shadow-cyan-500/25',
+      iconText: 'text-white',
+      gradient: 'from-cyan-600 to-teal-600',
+      progressGradient: 'from-cyan-500 via-teal-500 to-emerald-400',
+      glow: 'bg-cyan-500/10 dark:bg-cyan-500/20'
+    },
+    'Finance': {
+      code: 'FIN-07',
+      border: 'hover:border-rose-500/70 hover:shadow-rose-500/15',
+      badgeBg: 'bg-rose-50 dark:bg-rose-500/15',
+      badgeText: 'text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30',
+      iconBg: 'bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-md shadow-rose-500/25',
+      iconText: 'text-white',
+      gradient: 'from-rose-600 to-pink-600',
+      progressGradient: 'from-rose-500 via-pink-500 to-red-400',
+      glow: 'bg-rose-500/10 dark:bg-rose-500/20'
+    }
+  };
+
+  const defaultDeptFolderTheme = {
+    code: 'UNIT',
+    border: 'hover:border-sky-500/70 hover:shadow-sky-500/15',
+    badgeBg: 'bg-sky-50 dark:bg-sky-500/15',
+    badgeText: 'text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30',
+    iconBg: 'bg-gradient-to-br from-slate-600 to-slate-800 text-white shadow-md',
+    iconText: 'text-white',
+    gradient: 'from-slate-700 to-slate-900',
+    progressGradient: 'from-sky-500 to-blue-500',
+    glow: 'bg-slate-500/10'
+  };
+
+  const getDeptIcon = (dept: string) => {
+    switch (dept) {
+      case 'Academic Affairs':
+        return <GraduationCapIcon className="h-5 w-5" />;
+      case 'Registrar':
+        return <ClipboardListIcon className="h-5 w-5" />;
+      case 'Maintenance':
+        return <WrenchIcon className="h-5 w-5" />;
+      case 'Student Affairs':
+        return <UsersIcon className="h-5 w-5" />;
+      case 'Administration':
+        return <BuildingIcon className="h-5 w-5" />;
+      case 'IT Support':
+        return <LaptopIcon className="h-5 w-5" />;
+      case 'Finance':
+        return <CreditCardIcon className="h-5 w-5" />;
+      default:
+        return <BuildingIcon className="h-5 w-5" />;
+    }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -430,6 +599,7 @@ export function AdminDashboard({
       onLogout={onLogout}
       onNavigate={onNavigate}
       concernsData={concernsData}
+      onSelectConcern={setSelectedConcernId}
     >
       {/* ========================================================================= */}
       {/* SECTION 1: SYSTEM OVERVIEW (activeTab === 'dashboard')                     */}
@@ -545,479 +715,584 @@ export function AdminDashboard({
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          className="space-y-4 sm:space-y-6"
+          className="space-y-6"
         >
-          {/* Header & Search Toolbar */}
+          {/* Executive Clean Header Card */}
           <motion.div
             variants={itemVariants}
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-dark-800 p-6 sm:p-7 shadow-xs isolate"
           >
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                  All Concerns
+            {/* Subtle decorative ambient backdrop */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-sky-400/10 via-indigo-500/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              {/* Left: Section Identity */}
+              <div className="space-y-2 max-w-xl">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-sky-500/20 shadow-2xs">
+                    <BuildingIcon className="h-3.5 w-3.5" />
+                    <span>Campus Operations Directory</span>
+                  </span>
+                  <span className="text-xs font-medium text-slate-400 dark:text-gray-500">
+                    •
+                  </span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-gray-400">
+                    {folderDepartments.length} Active Departments
+                  </span>
+                </div>
+
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                  <span>All Concerns</span>
                 </h1>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-white/10">
-                  {filteredConcerns.length} of {concerns.length}
-                </span>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-gray-300 leading-relaxed">
+                  Campus student concerns organized into active department folders. Click any department folder to view tickets, review AI triaging, and confirm assignments.
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400">
-                Search, review AI routing suggestions, and confirm assignments.
-              </p>
+
+              {/* Right: Sleek Metric Micro-Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 lg:shrink-0">
+                <div className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/5 flex flex-col justify-between min-w-[105px] transition-all hover:border-slate-300 dark:hover:border-white/10">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-gray-400">Total</span>
+                    <FileTextIcon className="h-3.5 w-3.5 text-sky-500" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1.5">
+                    {normalizedConcerns.length}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200/60 dark:border-amber-500/15 flex flex-col justify-between min-w-[105px] transition-all hover:border-amber-300 dark:hover:border-amber-500/30">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">Review</span>
+                    <SparklesIcon className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1.5">
+                    {pendingReviewCount}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-rose-50/50 dark:bg-rose-500/5 border border-rose-200/60 dark:border-rose-500/15 flex flex-col justify-between min-w-[105px] transition-all hover:border-rose-300 dark:hover:border-rose-500/30">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-[11px] font-semibold text-rose-700 dark:text-rose-300">Urgent</span>
+                    <AlertTriangleIcon className="h-3.5 w-3.5 text-rose-500" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 mt-1.5">
+                    {stats.urgent}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-200/60 dark:border-emerald-500/15 flex flex-col justify-between min-w-[105px] transition-all hover:border-emerald-300 dark:hover:border-emerald-500/30">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">Resolved</span>
+                    <CheckCircle2Icon className="h-3.5 w-3.5 text-emerald-500" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1.5">
+                    {Math.round((stats.resolved / (normalizedConcerns.length || 1)) * 100)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Clean Integrated Controls Toolbar */}
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5"
+          >
+            {/* Left: Modern Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <SearchIcon className="h-4 w-4 text-slate-400 dark:text-gray-500" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search title, ID, student, category..."
+                className="block w-full pl-10 pr-9 bg-white dark:bg-dark-800 border border-slate-200/90 dark:border-white/10 rounded-2xl py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 shadow-xs transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                >
+                  <XCircleIcon className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
-            {/* Search & Status Controls */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <SearchIcon className="h-4 w-4 text-slate-400 dark:text-gray-500" />
-                </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search title, ID, student..."
-                  className="block w-full sm:w-64 pl-9 pr-3 bg-white dark:bg-dark-800 border border-slate-200 dark:border-white/10 rounded-xl py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 shadow-sm transition-all"
-                />
+            {/* Right: Quick Status Filter Pills & View Switcher */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Quick Status Chips */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setFilterStatus('all')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                    filterStatus === 'all'
+                      ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-white shadow-xs ring-2 ring-sky-500/25'
+                      : 'bg-white dark:bg-dark-800 text-slate-700 dark:text-gray-300 border border-slate-200/90 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/[0.03]'
+                  }`}
+                >
+                  <span>All</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                      filterStatus === 'all'
+                        ? 'bg-white/25 text-white'
+                        : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-gray-400'
+                    }`}
+                  >
+                    {normalizedConcerns.length}
+                  </span>
+                </button>
+
+                {pendingReviewCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterStatus('pending-review')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                      filterStatus === 'pending-review'
+                        ? 'bg-amber-500 text-white dark:bg-amber-500 dark:text-white shadow-xs ring-2 ring-amber-500/25'
+                        : 'bg-white dark:bg-dark-800 text-slate-700 dark:text-gray-300 border border-slate-200/90 dark:border-white/10 hover:border-amber-300 dark:hover:border-amber-500/30'
+                    }`}
+                  >
+                    <SparklesIcon className="h-3 w-3 shrink-0 text-amber-500" />
+                    <span>Review</span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                        filterStatus === 'pending-review'
+                          ? 'bg-white/25 text-white'
+                          : 'bg-amber-100/90 dark:bg-amber-500/20 text-amber-900 dark:text-amber-200'
+                      }`}
+                    >
+                      {pendingReviewCount}
+                    </span>
+                  </button>
+                )}
+
+                {stats.urgent > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterStatus('urgent')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                      filterStatus === 'urgent'
+                        ? 'bg-rose-500 text-white dark:bg-rose-500 dark:text-white shadow-xs ring-2 ring-rose-500/25'
+                        : 'bg-white dark:bg-dark-800 text-slate-700 dark:text-gray-300 border border-slate-200/90 dark:border-white/10 hover:border-rose-300 dark:hover:border-rose-500/30'
+                    }`}
+                  >
+                    <AlertTriangleIcon className="h-3 w-3 shrink-0 text-rose-500" />
+                    <span>Urgent</span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                        filterStatus === 'urgent'
+                          ? 'bg-white/25 text-white'
+                          : 'bg-rose-100/90 dark:bg-rose-500/20 text-rose-900 dark:text-rose-200'
+                      }`}
+                    >
+                      {stats.urgent}
+                    </span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setFilterStatus('resolved')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                    filterStatus === 'resolved'
+                      ? 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white shadow-xs ring-2 ring-emerald-500/25'
+                      : 'bg-white dark:bg-dark-800 text-slate-700 dark:text-gray-300 border border-slate-200/90 dark:border-white/10 hover:border-emerald-300 dark:hover:border-emerald-500/30'
+                  }`}
+                >
+                  <CheckCircle2Icon className="h-3 w-3 shrink-0 text-emerald-500" />
+                  <span>Resolved</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                      filterStatus === 'resolved'
+                        ? 'bg-white/25 text-white'
+                        : 'bg-emerald-100/90 dark:bg-emerald-500/20 text-emerald-900 dark:text-emerald-200'
+                    }`}
+                  >
+                    {stats.resolved}
+                  </span>
+                </button>
               </div>
 
+              {/* Status Select dropdown for additional filters */}
               <CustomSelect
                 value={filterStatus}
                 onChange={(val) => setFilterStatus(val as any)}
                 options={statusFilterOptions}
-                icon={<FilterIcon className="h-4 w-4" />}
-                className="w-full sm:w-auto min-w-[210px]"
+                className="w-full sm:w-auto sm:min-w-[170px]"
                 align="right"
               />
+
+              {/* View Switcher: Folders vs Feed */}
+              <div className="flex items-center bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-slate-200/80 dark:border-white/10 text-xs font-semibold shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setConcernsViewMode('folders')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+                    concernsViewMode === 'folders'
+                      ? 'bg-white dark:bg-dark-700 text-sky-600 dark:text-sky-400 shadow-xs font-bold'
+                      : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <LayoutGridIcon className="h-3.5 w-3.5" />
+                  <span>Folders</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConcernsViewMode('feed')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+                    concernsViewMode === 'feed'
+                      ? 'bg-white dark:bg-dark-700 text-sky-600 dark:text-sky-400 shadow-xs font-bold'
+                      : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <ListIcon className="h-3.5 w-3.5" />
+                  <span>Feed</span>
+                  {filteredConcerns.length > 0 && (
+                    <span
+                      className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                        concernsViewMode === 'feed'
+                          ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300'
+                          : 'bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {filteredConcerns.length}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </motion.div>
 
-          {/* Concerns Cards List */}
-          <motion.div variants={itemVariants}>
-            {filteredConcerns.length > 0 ? (
-              <div className="space-y-4">
-                {filteredConcerns.map((concern: any) => (
-                  <motion.div
-                    key={concern.id}
-                    whileHover={{ y: -2 }}
-                    transition={{ duration: 0.2 }}
-                    className="glass-panel rounded-2xl border border-slate-200/80 dark:border-white/10 overflow-hidden shadow-sm hover:border-sky-500/40 hover:shadow-md transition-all bg-white dark:bg-dark-800"
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-stretch divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80 dark:divide-white/10">
-                      {/* Left: Concern Details, Student Context & Visual SLA Stepper */}
-                      <div className="flex-1 min-w-0 p-5 sm:p-6 flex flex-col justify-between space-y-4">
-                        {/* Top Meta & Badges */}
+          {/* VIEW MODE 1: CLEAN DEPARTMENT FOLDERS GRID */}
+          {concernsViewMode === 'folders' && (
+            <motion.div variants={itemVariants} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                {folderDepartments.map((dept) => {
+                  const theme = deptFolderThemes[dept] || defaultDeptFolderTheme;
+                  const deptConcerns = normalizedConcerns.filter(
+                    (c: any) => c.department === dept
+                  );
+                  const matchingConcerns = filteredConcerns.filter(
+                    (c: any) => c.department === dept
+                  );
+                  const pendingCount = deptConcerns.filter(
+                    (c: any) => c.adminReviewStatus === 'pending' || !c.isConfirmed
+                  ).length;
+                  const urgentCount = deptConcerns.filter(
+                    (c: any) => c.priority === 'urgent' || c.priority === 'high'
+                  ).length;
+                  const resolvedCount = deptConcerns.filter(
+                    (c: any) => c.status === 'resolved'
+                  ).length;
+                  const inProgressCount = deptConcerns.filter(
+                    (c: any) => c.status === 'in-progress'
+                  ).length;
+                  const total = deptConcerns.length;
+                  const resolutionPct =
+                    total > 0
+                      ? Math.round((resolvedCount / total) * 100)
+                      : 0;
+                  const urgentPct = total > 0 ? (urgentCount / total) * 100 : 0;
+                  const pendingPct = total > 0 ? (pendingCount / total) * 100 : 0;
+                  const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
+                  const resolvedPct = total > 0 ? (resolvedCount / total) * 100 : 0;
+
+                  const isFiltered = searchQuery.trim() !== '' || filterStatus !== 'all';
+                  const isDimmed = isFiltered && matchingConcerns.length === 0;
+
+                  return (
+                    <motion.div
+                      key={dept}
+                      whileHover={{ y: -4 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      onClick={() => setActiveDepartmentFolder(dept)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setActiveDepartmentFolder(dept);
+                        }
+                      }}
+                      className={`group cursor-pointer select-none rounded-3xl border border-slate-200/90 dark:border-white/10 ${theme.border} bg-white dark:bg-dark-800 shadow-xs hover:shadow-xl dark:shadow-none dark:hover:shadow-2xl transition-all duration-300 relative overflow-hidden flex flex-col justify-between focus:outline-none focus:ring-2 focus:ring-sky-500/30 ${
+                        isDimmed ? 'opacity-40 hover:opacity-100' : 'opacity-100'
+                      }`}
+                    >
+                      {/* Department Signature Top Stripe - Sleek 3px accent line */}
+                      <div className={`h-[3px] w-full bg-gradient-to-r ${theme.gradient} transition-all duration-300 group-hover:h-1`} />
+
+                      {/* Ambient Department Glow on Hover */}
+                      <div
+                        className={`absolute top-0 right-0 w-44 h-44 ${theme.glow} rounded-full blur-3xl pointer-events-none transition-opacity duration-300 group-hover:opacity-100 opacity-20 dark:opacity-30`}
+                      />
+
+                      <div className="p-6 flex flex-col justify-between flex-1 space-y-4">
+                        {/* Card Top: Department Icon, Unit Code & Matches */}
                         <div>
-                          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                            <span className="text-xs font-mono font-medium text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-white/[0.04] px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-white/5">
-                              {concern.id}
-                            </span>
-                            <span className="text-xs font-semibold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-200 dark:border-sky-500/20">
-                              {concern.category}
-                            </span>
-                            {concern.subcategory && (
-                              <span className="text-xs text-slate-500 dark:text-gray-400 bg-slate-50 dark:bg-white/[0.02] px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-white/5">
-                                {concern.subcategory}
-                              </span>
-                            )}
-                            {concern.adminReviewStatus === 'pending' || !concern.isConfirmed ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/20">
-                                <SparklesIcon className="h-3 w-3 text-amber-500 animate-pulse" />
-                                Awaiting Admin Confirmation
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20">
-                                <CheckCircle2Icon className="h-3 w-3 text-emerald-500" />
-                                Confirmed & Routed
-                              </span>
-                            )}
-                            <div className="ml-auto flex items-center gap-2 shrink-0">
-                              <PriorityBadge priority={concern.priority} size="sm" />
-                              <StatusBadge status={concern.status} size="sm" />
-                            </div>
-                          </div>
-
-                          {/* Title */}
-                          <h3
-                            onClick={() => setSelectedConcernId(concern.id)}
-                            className="text-base sm:text-lg font-bold text-slate-900 dark:text-white cursor-pointer hover:text-sky-600 dark:hover:text-sky-400 transition-colors leading-snug"
-                          >
-                            {concern.title}
-                          </h3>
-
-                          {/* Description */}
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-gray-300 line-clamp-3 mt-2 leading-relaxed">
-                            {concern.description}
-                          </p>
-                        </div>
-
-                        {/* Middle Section: Student Meta Bar + Visual SLA Lifecycle Stepper */}
-                        <div className="space-y-3 my-1">
-                          {/* Student & Submission Details Card */}
-                          <div className="p-3 sm:p-3.5 rounded-xl bg-slate-50/90 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-bold flex items-center justify-center text-xs shrink-0 border border-sky-200/70 dark:border-sky-500/30">
-                                {(concern.studentName || 'S').charAt(0)}
-                              </div>
-                              <div>
-                                <div className="font-bold text-slate-900 dark:text-white">
-                                  {concern.studentName || 'Student'}
-                                </div>
-                                <div className="text-[11px] text-slate-500 dark:text-gray-400 flex items-center gap-2">
-                                  <span>Student Submitter</span>
-                                  <span>•</span>
-                                  <span className="text-slate-600 dark:text-gray-300 font-medium">
-                                    {concern.department || 'General'}
-                                  </span>
-                                </div>
-                              </div>
+                          <div className="flex items-start justify-between gap-3 mb-3.5">
+                            <div
+                              className={`w-11 h-11 rounded-2xl ${theme.iconBg} flex items-center justify-center shrink-0 border border-white/20 shadow-xs transition-transform duration-200 group-hover:scale-105`}
+                            >
+                              {getDeptIcon(dept)}
                             </div>
 
-                            <div className="flex items-center gap-4 text-[11px] text-slate-500 dark:text-gray-400">
-                              <div className="flex items-center gap-1.5">
-                                <CalendarIcon className="h-3.5 w-3.5 text-slate-400" />
-                                <span>{formatDate(concern.createdAt)}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <BuildingIcon className="h-3.5 w-3.5 text-slate-400" />
-                                <span className="font-medium text-slate-700 dark:text-gray-300">{concern.department}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Intake & Routing Lifecycle Stepper */}
-                          <div className="p-3 sm:p-3.5 rounded-xl bg-slate-50/60 dark:bg-dark-900/40 border border-slate-200/60 dark:border-white/5">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
-                                Routing & SLA Lifecycle
-                              </span>
-                              <span className="text-[11px] font-semibold text-sky-600 dark:text-sky-400">
-                                {concern.status === 'resolved'
-                                  ? 'Resolution Completed'
-                                  : concern.status === 'rejected'
-                                  ? 'Ticket Closed / Rejected'
-                                  : concern.isConfirmed
-                                  ? 'Assigned to Staff'
-                                  : 'Intake Triaged (Needs Review)'}
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-4 gap-2 text-[10px]">
-                              {/* Step 1: Intake Logged */}
-                              <div className="flex flex-col gap-1">
-                                <div className="h-1.5 rounded-full bg-emerald-500" />
-                                <span className="font-semibold text-emerald-700 dark:text-emerald-400 truncate">1. Logged</span>
-                              </div>
-
-                              {/* Step 2: AI Triage */}
-                              <div className="flex flex-col gap-1">
-                                <div className="h-1.5 rounded-full bg-emerald-500" />
-                                <span className="font-semibold text-emerald-700 dark:text-emerald-400 truncate">2. AI Triaged</span>
-                              </div>
-
-                              {/* Step 3: Admin Routing */}
-                              <div className="flex flex-col gap-1">
-                                <div
-                                  className={`h-1.5 rounded-full ${
-                                    concern.isConfirmed
-                                      ? 'bg-emerald-500'
-                                      : 'bg-amber-500 animate-pulse'
-                                  }`}
-                                />
+                            <div className="flex items-center gap-2">
+                              {urgentCount > 0 && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-500/30">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                                  <span>{urgentCount} urgent</span>
+                                </span>
+                              )}
+                              {isFiltered && (
                                 <span
-                                  className={`font-semibold truncate ${
-                                    concern.isConfirmed
-                                      ? 'text-emerald-700 dark:text-emerald-400'
-                                      : 'text-amber-700 dark:text-amber-400'
+                                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${
+                                    matchingConcerns.length > 0
+                                      ? 'bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30'
+                                      : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-gray-400 border-slate-200 dark:border-white/10'
                                   }`}
                                 >
-                                  3. Routing
+                                  {matchingConcerns.length} match
                                 </span>
-                              </div>
+                              )}
+                              <span className="text-[11px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-gray-300 border border-slate-200/80 dark:border-white/10">
+                                {theme.code}
+                              </span>
+                            </div>
+                          </div>
 
-                              {/* Step 4: Resolution */}
-                              <div className="flex flex-col gap-1">
-                                <div
-                                  className={`h-1.5 rounded-full ${
-                                    concern.status === 'resolved'
-                                      ? 'bg-emerald-500'
-                                      : 'bg-slate-200 dark:bg-white/10'
-                                  }`}
-                                />
+                          {/* Department Title & Total Tickets */}
+                          <h3 className="font-extrabold text-slate-900 dark:text-white text-base sm:text-lg truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                            {dept}
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-gray-400 truncate mt-0.5 font-medium">
+                            {total} {total === 1 ? 'student ticket logged' : 'student tickets logged'}
+                          </p>
+
+                          {/* Sleek Ticket Distribution Bar & Clean Inline Indicators */}
+                          <div className="space-y-3 my-3.5">
+                            {/* Proportional breakdown bar */}
+                            <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden flex gap-0.5">
+                              {total === 0 ? (
+                                <div className="w-full h-full bg-slate-200/50 dark:bg-white/5 rounded-full" />
+                              ) : (
+                                <>
+                                  {urgentCount > 0 && (
+                                    <div
+                                      className="h-full bg-rose-500 transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                                      style={{ width: `${urgentPct}%` }}
+                                      title={`${urgentCount} Urgent`}
+                                    />
+                                  )}
+                                  {pendingCount > 0 && (
+                                    <div
+                                      className="h-full bg-amber-400 transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                                      style={{ width: `${pendingPct}%` }}
+                                      title={`${pendingCount} Review`}
+                                    />
+                                  )}
+                                  {inProgressCount > 0 && (
+                                    <div
+                                      className="h-full bg-sky-500 transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                                      style={{ width: `${inProgressPct}%` }}
+                                      title={`${inProgressCount} Active`}
+                                    />
+                                  )}
+                                  {resolvedCount > 0 && (
+                                    <div
+                                      className="h-full bg-emerald-500 transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                                      style={{ width: `${resolvedPct}%` }}
+                                      title={`${resolvedCount} Resolved`}
+                                    />
+                                  )}
+                                </>
+                              )}
+                            </div>
+
+                            {/* Clean inline stats row - No Clunky Nested Boxes */}
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 text-slate-600 dark:text-gray-400 font-medium">
+                                  <span
+                                    className={`w-2 h-2 rounded-full shrink-0 ${
+                                      pendingCount > 0 ? 'bg-amber-500 animate-pulse' : 'bg-slate-300 dark:bg-white/20'
+                                    }`}
+                                  />
+                                  <span>Review</span>
+                                </span>
                                 <span
-                                  className={`font-semibold truncate ${
-                                    concern.status === 'resolved'
-                                      ? 'text-emerald-700 dark:text-emerald-400'
+                                  className={`font-semibold ${
+                                    pendingCount > 0
+                                      ? 'text-amber-700 dark:text-amber-300 font-bold'
                                       : 'text-slate-400 dark:text-gray-500'
                                   }`}
                                 >
-                                  4. Resolution
+                                  {pendingCount}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 text-slate-600 dark:text-gray-400 font-medium">
+                                  <span
+                                    className={`w-2 h-2 rounded-full shrink-0 ${
+                                      urgentCount > 0 ? 'bg-rose-500' : 'bg-slate-300 dark:bg-white/20'
+                                    }`}
+                                  />
+                                  <span>Urgent</span>
+                                </span>
+                                <span
+                                  className={`font-semibold ${
+                                    urgentCount > 0
+                                      ? 'text-rose-700 dark:text-rose-300 font-bold'
+                                      : 'text-slate-400 dark:text-gray-500'
+                                  }`}
+                                >
+                                  {urgentCount}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 text-slate-600 dark:text-gray-400 font-medium">
+                                  <span
+                                    className={`w-2 h-2 rounded-full shrink-0 ${
+                                      inProgressCount > 0 ? 'bg-sky-500' : 'bg-slate-300 dark:bg-white/20'
+                                    }`}
+                                  />
+                                  <span>Active</span>
+                                </span>
+                                <span
+                                  className={`font-semibold ${
+                                    inProgressCount > 0
+                                      ? 'text-sky-700 dark:text-sky-300 font-bold'
+                                      : 'text-slate-400 dark:text-gray-500'
+                                  }`}
+                                >
+                                  {inProgressCount}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 text-slate-600 dark:text-gray-400 font-medium">
+                                  <span
+                                    className={`w-2 h-2 rounded-full shrink-0 ${
+                                      resolvedCount > 0 ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-white/20'
+                                    }`}
+                                  />
+                                  <span>Resolved</span>
+                                </span>
+                                <span
+                                  className={`font-semibold ${
+                                    resolvedCount > 0
+                                      ? 'text-emerald-700 dark:text-emerald-300 font-bold'
+                                      : 'text-slate-400 dark:text-gray-500'
+                                  }`}
+                                >
+                                  {resolvedCount}
                                 </span>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Bottom Action Footer */}
-                        <div className="pt-3 border-t border-slate-200/80 dark:border-white/5 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-gray-400">
-                            <span className="inline-flex items-center gap-1">
-                              <MessageSquareIcon className="h-3.5 w-3.5 text-slate-400" />
-                              <span>Thread Active</span>
+                        {/* Bottom: Resolution Status & Interactive View Action */}
+                        <div className="pt-3.5 mt-auto border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-gray-400 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <span>Resolution</span>
+                            <span className="font-bold text-slate-700 dark:text-gray-200">
+                              {resolutionPct}%
                             </span>
                           </div>
 
-                          <button
-                            onClick={() => setSelectedConcernId(concern.id)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-semibold text-xs border border-sky-200/70 dark:border-sky-500/20 transition-all active:scale-95 group"
-                          >
-                            <span>Open Full Details & Thread</span>
-                            <ChevronRightIcon className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                          </button>
+                          <div className="flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-gray-300 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                            <span>View tickets</span>
+                            <ArrowRightIcon className="h-3.5 w-3.5 transform group-hover:translate-x-1 transition-transform" />
+                          </div>
                         </div>
                       </div>
-
-                      {/* Right: AI Classification & Routing Panel */}
-                      <div className="lg:w-[380px] shrink-0 p-5 sm:p-6 bg-slate-50/60 dark:bg-dark-900/40 flex flex-col justify-between space-y-4">
-                        {concern.adminReviewStatus === 'pending' || !concern.isConfirmed ? (
-                          <div className="space-y-3.5">
-                            {/* Badges */}
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-200/80 dark:border-amber-500/25">
-                                <SparklesIcon className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 animate-pulse" />
-                                <span>AI Classification</span>
-                              </div>
-                              <span className="text-[10px] font-semibold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-500/15 px-2 py-0.5 rounded-full border border-sky-200 dark:border-sky-500/25">
-                                AI Confidence: {Math.round(((concern.aiClassification?.confidence ?? 0.88) * 100))}%
-                              </span>
-                            </div>
-
-                            {/* Reasoning */}
-                            {concern.aiClassification?.reasoning && (
-                              <div className="text-[11px] text-sky-950 dark:text-sky-200 bg-sky-50/80 dark:bg-sky-500/10 p-2.5 rounded-xl border border-sky-200 dark:border-sky-500/20 leading-relaxed">
-                                <span className="font-bold text-sky-800 dark:text-sky-300 block mb-0.5">
-                                  AI Reasoning
-                                </span>
-                                {concern.aiClassification.reasoning}
-                              </div>
-                            )}
-
-                            {/* Recommendations summary */}
-                            <div className="grid grid-cols-2 gap-2 text-[11px]">
-                              <div className="bg-slate-50 dark:bg-white/[0.04] p-2.5 rounded-xl border border-slate-200/70 dark:border-white/5">
-                                <span className="text-[10px] text-slate-500 dark:text-gray-400 block font-medium">
-                                  Recommended Dept
-                                </span>
-                                <span className="text-sky-700 dark:text-cyan-300 font-bold truncate block mt-0.5">
-                                  {concern.aiClassification?.department || concern.department}
-                                </span>
-                              </div>
-                              <div className="bg-slate-50 dark:bg-white/[0.04] p-2.5 rounded-xl border border-slate-200/70 dark:border-white/5">
-                                <span className="text-[10px] text-slate-500 dark:text-gray-400 block font-medium">
-                                  Recommended Staff
-                                </span>
-                                <span className="text-slate-900 dark:text-white font-bold truncate block mt-0.5">
-                                  {concern.suggestedStaffName || 'None recommended'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Category selector */}
-                            <div className="space-y-1">
-                              <label className="text-[11px] text-slate-600 dark:text-gray-400 font-semibold">
-                                Category
-                              </label>
-                              <CustomSelect
-                                value={categoryDraft[concern.id] ?? concern.category}
-                                onChange={(val) =>
-                                  setCategoryDraft((prev) => ({ ...prev, [concern.id]: val }))
-                                }
-                                options={categorySelectOptions}
-                                size="sm"
-                                className="w-full"
-                              />
-                            </div>
-
-                            {/* Department selector */}
-                            <div className="space-y-1">
-                              <label className="text-[11px] text-slate-600 dark:text-gray-400 font-semibold">
-                                Department
-                              </label>
-                              <CustomSelect
-                                value={deptDraft[concern.id] ?? concern.department}
-                                onChange={(val) =>
-                                  setDeptDraft((prev) => ({ ...prev, [concern.id]: val }))
-                                }
-                                options={departmentSelectOptions}
-                                size="sm"
-                                className="w-full"
-                              />
-                            </div>
-
-                            {/* Admin Final Assignment Section */}
-                            <div className="pt-2 border-t border-slate-200/80 dark:border-white/10 space-y-2">
-                              <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
-                                <span>Admin Final Assignment</span>
-                                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
-                                  Review & Confirm
-                                </span>
-                              </div>
-
-                              {/* Staff assignment selector */}
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="text-slate-600 dark:text-gray-400 font-medium">Assign to Staff</span>
-                                  {concern.suggestedStaffName && (
-                                    <span className="text-sky-600 dark:text-cyan-400 font-semibold truncate max-w-[150px]">
-                                      Rec: {concern.suggestedStaffName}
-                                    </span>
-                                  )}
-                                </div>
-                                <CustomSelect
-                                  value={assignDraft[concern.id] ?? concern.suggestedStaffId ?? ''}
-                                  onChange={(val) =>
-                                    setAssignDraft((prev) => ({ ...prev, [concern.id]: val }))
-                                  }
-                                  options={getStaffSelectOptions(deptDraft[concern.id] ?? concern.department)}
-                                  size="sm"
-                                  className="w-full"
-                                  placeholder="Select staff member…"
-                                />
-                              </div>
-
-                              <button
-                                type="button"
-                                disabled={isConfirming[concern.id]}
-                                onClick={() => handleConfirmConcern(concern)}
-                                className="w-full mt-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-sky-500/20 transition-all disabled:opacity-50 touch-manipulation active:scale-[0.98]"
-                              >
-                                {isConfirming[concern.id] ? (
-                                  <>
-                                    <div className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                                    <span>Confirming Final Assignment...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle2Icon className="h-4 w-4 text-white" />
-                                    <span>Confirm Final Assignment</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          /* Confirmed state */
-                          <div className="space-y-3.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-500/20">
-                                <CheckCircle2Icon className="h-3.5 w-3.5" />
-                                Assignment Confirmed
-                              </span>
-                              <span className="text-[11px] text-slate-500 dark:text-gray-400 truncate">
-                                {concern.department}
-                              </span>
-                            </div>
-
-                            <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 space-y-1">
-                              <span className="text-[10px] text-slate-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                                Assigned Staff
-                              </span>
-                              <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                                {staffNameById.get(concern.assignedTo) || 'Assigned to Staff'}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                              <label className="text-[11px] text-slate-600 dark:text-gray-400 font-semibold">
-                                Reassign to staff
-                              </label>
-                              <div className="flex items-center gap-2">
-                                <CustomSelect
-                                  value={assignDraft[concern.id] ?? concern.assignedTo ?? ''}
-                                  onChange={(val) =>
-                                    setAssignDraft((prev) => ({
-                                      ...prev,
-                                      [concern.id]: val
-                                    }))
-                                  }
-                                  options={reassignStaffSelectOptions}
-                                  size="sm"
-                                  className="flex-1 min-w-0"
-                                  placeholder="Select staff…"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    const staffId = assignDraft[concern.id];
-                                    if (!staffId) {
-                                      toast.error('Select a staff member first.');
-                                      return;
-                                    }
-                                    try {
-                                      await assignConcern(concern.id, staffId);
-                                      toast.success('Reassigned successfully.');
-                                    } catch {
-                                      /* useConcerns already toasts */
-                                    }
-                                  }}
-                                  className="px-3 py-1.5 rounded-xl bg-sky-600 text-white text-xs font-semibold hover:bg-sky-500 transition-colors shadow-sm active:scale-95"
-                                >
-                                  Save
-                                </button>
-                              </div>
-                            </div>
-
-                            {concern.assignedTo && (
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  try {
-                                    await assignConcern(concern.id, null);
-                                    setAssignDraft((prev) => {
-                                      const next = { ...prev };
-                                      delete next[concern.id];
-                                      return next;
-                                    });
-                                    toast.success('Unassigned.');
-                                  } catch {
-                                    /* useConcerns already toasts */
-                                  }
-                                }}
-                                className="w-full px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white text-xs font-medium transition-colors"
-                              >
-                                Clear assignment
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </div>
-            ) : (
-              <div className="glass-panel p-10 sm:p-14 text-center rounded-2xl border border-slate-200/80 dark:border-white/10">
-                <div className="p-3 w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-500 flex items-center justify-center mb-3">
-                  <SearchIcon className="h-6 w-6" />
+            </motion.div>
+          )}
+
+          {/* VIEW MODE 2: DIRECT ALL TICKETS FEED */}
+          {concernsViewMode === 'feed' && (
+            <motion.div variants={itemVariants} className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-bold text-slate-700 dark:text-gray-300">
+                  Showing {filteredConcerns.length} of {normalizedConcerns.length} concerns across all departments
+                </span>
+                {(searchQuery || filterStatus !== 'all') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setFilterStatus('all');
+                    }}
+                    className="text-xs text-sky-600 dark:text-sky-400 hover:underline font-semibold"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+
+              {filteredConcerns.length === 0 ? (
+                <div className="text-center py-16 px-4 bg-white dark:bg-dark-800 rounded-3xl border border-slate-200/80 dark:border-white/10 space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 mx-auto flex items-center justify-center">
+                    <SearchIcon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    No concerns match your search or filter
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-gray-400 max-w-sm mx-auto">
+                    Try adjusting your search query or selecting a different status filter to view campus concerns.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setFilterStatus('all');
+                    }}
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-sky-600 text-white hover:bg-sky-700 transition-colors shadow-xs"
+                  >
+                    Reset Filters
+                  </button>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
-                  No concerns found
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 max-w-sm mx-auto">
-                  Try adjusting your search query or reset your status filter to view campus concerns.
-                </p>
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setFilterStatus('all');
-                  }}
-                  className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-sky-600 text-white hover:bg-sky-500 transition-colors"
-                >
-                  Reset Filters
-                </button>
-              </div>
-            )}
-          </motion.div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredConcerns.map((concern: any) => (
+                    <AdminConcernCard
+                      key={concern.id}
+                      concern={concern}
+                      formatDate={formatDate}
+                      onSelectConcern={setSelectedConcernId}
+                      categoryDraft={categoryDraft}
+                      setCategoryDraft={setCategoryDraft}
+                      categorySelectOptions={categorySelectOptions}
+                      deptDraft={deptDraft}
+                      setDeptDraft={setDeptDraft}
+                      departmentSelectOptions={departmentSelectOptions}
+                      assignDraft={assignDraft}
+                      setAssignDraft={setAssignDraft}
+                      getStaffSelectOptions={getStaffSelectOptions}
+                      reassignStaffSelectOptions={reassignStaffSelectOptions}
+                      isConfirming={isConfirming}
+                      handleConfirmConcern={handleConfirmConcern}
+                      assignConcern={assignConcern}
+                      staffNameById={staffNameById}
+                    />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       )}
 
@@ -1570,6 +1845,30 @@ export function AdminDashboard({
         }}
         staffUsers={staffUsers}
         onClose={() => setSelectedConcernId(null)}
+      />
+
+      {/* Department Concerns Modal */}
+      <DepartmentConcernsModal
+        isOpen={Boolean(activeDepartmentFolder)}
+        department={activeDepartmentFolder}
+        onClose={() => setActiveDepartmentFolder(null)}
+        concerns={normalizedConcerns}
+        onSelectConcern={setSelectedConcernId}
+        formatDate={formatDate}
+        categoryDraft={categoryDraft}
+        setCategoryDraft={setCategoryDraft}
+        categorySelectOptions={categorySelectOptions}
+        deptDraft={deptDraft}
+        setDeptDraft={setDeptDraft}
+        departmentSelectOptions={departmentSelectOptions}
+        assignDraft={assignDraft}
+        setAssignDraft={setAssignDraft}
+        getStaffSelectOptions={getStaffSelectOptions}
+        reassignStaffSelectOptions={reassignStaffSelectOptions}
+        isConfirming={isConfirming}
+        handleConfirmConcern={handleConfirmConcern}
+        assignConcern={assignConcern}
+        staffNameById={staffNameById}
       />
 
       {/* Add Department Modal */}
