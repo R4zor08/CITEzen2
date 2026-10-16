@@ -1,6 +1,10 @@
+import dns from 'node:dns';
 import dotenv from 'dotenv';
 import { createApp } from './app.js';
 import { connectMongo } from './db/mongo.js';
+
+// Prioritize IPv4 DNS resolution to prevent outbound timeouts on Windows
+dns.setDefaultResultOrder('ipv4first');
 
 dotenv.config();
 

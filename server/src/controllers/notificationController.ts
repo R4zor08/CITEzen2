@@ -21,11 +21,30 @@ export async function listNotifications(req: Request, res: Response) {
 
 export async function markRead(req: Request, res: Response) {
   try {
-    const n = await notificationService.markRead(req.params.id);
+    const read = typeof req.body?.read === 'boolean' ? req.body.read : true;
+    const n = await notificationService.markRead(req.params.id, read);
+    if (!n) {
+      res.status(404).json({ error: 'Notification not found' });
+      return;
+    }
     res.json(notificationToApi(n));
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to update notification' });
+  }
+}
+
+export async function deleteNotification(req: Request, res: Response) {
+  try {
+    const n = await notificationService.deleteNotification(req.params.id);
+    if (!n) {
+      res.status(404).json({ error: 'Notification not found' });
+      return;
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to delete notification' });
   }
 }
 

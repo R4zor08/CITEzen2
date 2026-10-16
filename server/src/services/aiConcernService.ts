@@ -21,8 +21,7 @@ const DEFAULT_DEPARTMENTS = [
   'Student Affairs',
   'Administration',
   'IT Support',
-  'Finance',
-  'CITE'
+  'Finance'
 ];
 
 /**
@@ -100,12 +99,7 @@ function classifyWithHeuristics(input: AIClassificationInput): AIClassification 
       ? 'Faculty & Instruction Concern'
       : 'Academic Inquiry';
 
-    // Route CITE / BSIT specifics to CITE if available
-    if (/\b(cite|bsit|programming|coding|lab|computer|software)\b/.test(text)) {
-      targetDepartment = input.departments.includes('CITE') ? 'CITE' : 'Academic Affairs';
-    } else {
-      targetDepartment = 'Academic Affairs';
-    }
+    targetDepartment = 'Academic Affairs';
     reasoning =
       'The concern involves course performance, grading, instructors, or academic matters.';
   }

@@ -31,8 +31,7 @@ export const DEFAULT_DEPARTMENTS = [
   'Student Affairs',
   'Administration',
   'IT Support',
-  'Finance',
-  'CITE'
+  'Finance'
 ];
 
 /**
@@ -119,12 +118,7 @@ export function classifyWithHeuristics(input: GeminiClassificationInput): AIClas
       ? 'Faculty & Instruction Concern'
       : 'Academic Inquiry';
 
-    // Route CITE / BSIT specifics to CITE if available
-    if (/\b(cite|bsit|programming|coding|lab|computer|workstation|software)\b/.test(text)) {
-      targetDepartment = input.departments.includes('CITE') ? 'CITE' : 'Academic Affairs';
-    } else {
-      targetDepartment = 'Academic Affairs';
-    }
+    targetDepartment = 'Academic Affairs';
     priority = /\b(dispute|fail|graduation|urgent)\b/.test(text) ? 'high' : 'medium';
     concernSummary = `Academic concern regarding coursework, grading, or department facilities: ${input.title.trim()}`;
     reasoning =

@@ -14,8 +14,12 @@ export async function listNotificationsByUserId(userId: string) {
   return NotificationModel.find({ userId }).sort({ createdAt: -1 }).exec();
 }
 
-export async function markNotificationRead(id: string) {
-  return NotificationModel.findByIdAndUpdate(id, { $set: { read: true } }, { new: true }).exec();
+export async function markNotificationRead(id: string, read = true) {
+  return NotificationModel.findByIdAndUpdate(id, { $set: { read } }, { new: true }).exec();
+}
+
+export async function deleteNotification(id: string) {
+  return NotificationModel.findByIdAndDelete(id).exec();
 }
 
 export async function markAllNotificationsRead(userId: string) {

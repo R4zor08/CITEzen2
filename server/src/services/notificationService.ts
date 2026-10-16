@@ -4,8 +4,12 @@ export async function listNotifications(userId: string) {
   return notifications.listNotificationsByUserId(userId);
 }
 
-export async function markRead(id: string) {
-  return notifications.markNotificationRead(id);
+export async function markRead(id: string, read = true) {
+  return notifications.markNotificationRead(id, read);
+}
+
+export async function deleteNotification(id: string) {
+  return notifications.deleteNotification(id);
 }
 
 export async function markAllRead(userId: string) {

@@ -79,8 +79,9 @@ export async function createConcern(args: {
       'Administration',
       'IT Support',
       'Finance',
-      'CITE',
-      ...staffCandidates.map((s) => s.department).filter(Boolean)
+      ...staffCandidates
+        .map((s) => s.department)
+        .filter((d): d is string => Boolean(d) && d !== 'CITE')
     ])
   ) as string[];
 
