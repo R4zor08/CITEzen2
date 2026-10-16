@@ -107,12 +107,13 @@ export function CustomSelect({
         } ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-[0.99]'}`}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          {icon && <span className="text-slate-400 dark:text-gray-500 shrink-0">{icon}</span>}
           {selectedOption ? (
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              {selectedOption.icon && (
+              {selectedOption.icon ? (
                 <span className="shrink-0">{selectedOption.icon}</span>
-              )}
+              ) : icon ? (
+                <span className="text-slate-400 dark:text-gray-500 shrink-0">{icon}</span>
+              ) : null}
               <span className="truncate font-medium">
                 {selectedOption.label}
               </span>
@@ -127,9 +128,12 @@ export function CustomSelect({
               )}
             </div>
           ) : (
-            <span className="text-slate-400 dark:text-gray-500 truncate">
-              {placeholder}
-            </span>
+            <>
+              {icon && <span className="text-slate-400 dark:text-gray-500 shrink-0">{icon}</span>}
+              <span className="text-slate-400 dark:text-gray-500 truncate">
+                {placeholder}
+              </span>
+            </>
           )}
         </div>
 

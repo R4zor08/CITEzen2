@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 import { toast } from 'sonner';
-import { getApiBase } from '../lib/api';
+import { getApiBase, getAuthToken } from '../lib/api';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ChatHistorySidebar } from './ChatHistorySidebar';
 import {
@@ -525,7 +525,7 @@ export function ChatBubble({
 
       try {
         const url = `${getApiBase()}/api/chat/stream`;
-        const token = localStorage.getItem('citezen_token');
+        const token = getAuthToken();
         const response = await fetch(
           url,
           {
@@ -539,7 +539,7 @@ export function ChatBubble({
               model: 'openai/gpt-oss-20b',
               messages: payloadMessages,
               temperature: 0.5,
-              max_tokens: 768,
+              max_tokens: 1536,
               stream: true
             })
           }
@@ -624,7 +624,7 @@ export function ChatBubble({
               model: 'openai/gpt-oss-20b',
               messages: payloadMessages,
               temperature: 0.5,
-              max_tokens: 768,
+              max_tokens: 1536,
               stream: false
             })
           });
@@ -707,10 +707,33 @@ export function ChatBubble({
         setStreamingContent('');
         streamBufferRef.current = '';
         clearStreamReveal();
-        const rawMessage = String(
+        let rawMessage = String(
           anyErr?.message ||
             'Sorry, I encountered an error connecting to the server. Please try again later.'
         );
+
+        // Try extracting user-friendly error message if it's a JSON response from server
+        try {
+          const parsed = JSON.parse(rawMessage);
+          if (parsed?.error?.message) {
+            rawMessage = parsed.error.message;
+          } else if (typeof parsed?.error === 'string') {
+            rawMessage = parsed.error;
+          } else if (parsed?.message) {
+            rawMessage = parsed.message;
+          }
+        } catch {
+          // not JSON, keep as is
+        }
+
+        if (
+          rawMessage.toLowerCase().includes('bearer token') ||
+          rawMessage.toLowerCase().includes('unauthorized')
+        ) {
+          rawMessage =
+            'Your session has expired or you are not signed in. Please sign in again to continue chatting with GabAI.';
+        }
+
         const safeMessage =
           rawMessage.includes('<!DOCTYPE') || rawMessage.length > 400
             ? 'I had trouble completing your request. Please try again, or ask a shorter version of your question.'

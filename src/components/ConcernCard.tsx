@@ -44,7 +44,11 @@ export function ConcernCard({
             }
           : undefined
       }
-      className={`concern-card glass-card p-4 sm:p-5 rounded-2xl group border border-slate-200/80 dark:border-white/10 hover:border-sky-500/30 transition-all duration-200 ${
+      className={`concern-card glass-card p-4 sm:p-5 rounded-2xl group transition-all duration-200 ${
+        concern.priority === 'urgent'
+          ? 'border-2 border-red-500/70 dark:border-rose-500/60 bg-red-50/20 dark:bg-rose-950/15 shadow-md shadow-red-500/10 hover:border-red-500'
+          : 'border border-slate-200/80 dark:border-white/10 hover:border-sky-500/30'
+      } ${
         onClick
           ? 'cursor-pointer touch-manipulation active:scale-[0.99] hover:shadow-xl hover:shadow-sky-500/5'
           : ''
@@ -110,7 +114,11 @@ export function ConcernCard({
         </div>
 
         {onClick && (
-          <div className="concern-card-action flex items-center text-xs font-semibold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-cyan-300 transition-colors">
+          <div className={`concern-card-action flex items-center text-xs font-semibold transition-colors ${
+            concern.priority === 'urgent'
+              ? 'text-red-600 dark:text-rose-400 group-hover:text-red-700 dark:group-hover:text-rose-300'
+              : 'text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-cyan-300'
+          }`}>
             <span>View Details</span>
             <ChevronRightIcon className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
           </div>

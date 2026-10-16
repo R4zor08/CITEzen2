@@ -78,11 +78,6 @@ export function Sidebar({
     icon: InboxIcon
   },
   {
-    id: 'all-concerns',
-    label: 'Dept. Concerns',
-    icon: FileTextIcon
-  },
-  {
     id: 'notifications',
     label: 'Notifications',
     icon: BellIcon

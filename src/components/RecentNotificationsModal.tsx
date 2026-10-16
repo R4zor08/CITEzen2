@@ -9,7 +9,9 @@ import {
   InfoIcon,
   ArrowRightIcon,
   XIcon,
-  SparklesIcon
+  SparklesIcon,
+  Trash2Icon,
+  ExternalLinkIcon
 } from 'lucide-react';
 import { Notification } from '../types';
 
@@ -17,8 +19,10 @@ export interface RecentNotificationsModalProps {
   isOpen: boolean;
   onClose: () => void;
   notifications: Notification[];
-  onMarkRead: (id: string) => void | Promise<void>;
+  onMarkRead: (id: string, read?: boolean) => void | Promise<void>;
   onMarkAllRead?: () => void | Promise<void>;
+  onDeleteNotification?: (id: string) => void | Promise<void>;
+  onSelectConcern?: (concernId: string) => void;
   onViewAll: () => void;
   maxRecent?: number;
 }
@@ -29,6 +33,8 @@ export function RecentNotificationsModal({
   notifications,
   onMarkRead,
   onMarkAllRead,
+  onDeleteNotification,
+  onSelectConcern,
   onViewAll,
   maxRecent = 5
 }: RecentNotificationsModalProps) {
@@ -186,15 +192,18 @@ export function RecentNotificationsModal({
                 recentNotifications.map((notification) => {
                   const info = getIconInfo(notification.type);
                   return (
-                    <button
+                    <div
                       key={notification.id}
-                      type="button"
                       onClick={() => {
                         if (!notification.read) {
-                          void onMarkRead(notification.id);
+                          void onMarkRead(notification.id, true);
+                        }
+                        if (notification.concernId && onSelectConcern) {
+                          onClose();
+                          onSelectConcern(notification.concernId);
                         }
                       }}
-                      className={`group w-full text-left p-3 rounded-xl transition-all duration-150 touch-manipulation flex items-start gap-3 border ${
+                      className={`group relative w-full text-left p-3 rounded-xl transition-all duration-150 cursor-pointer flex items-start gap-3 border ${
                         notification.read
                           ? 'bg-transparent hover:bg-slate-50 dark:hover:bg-white/[0.04] border-transparent hover:border-slate-200/60 dark:hover:border-white/5'
                           : 'bg-sky-50/70 hover:bg-sky-100/70 dark:bg-sky-500/[0.08] dark:hover:bg-sky-500/[0.13] border-sky-200/70 dark:border-sky-500/25 shadow-2xs'
@@ -208,7 +217,7 @@ export function RecentNotificationsModal({
                       </div>
 
                       {/* Content */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 pr-1">
                         <div className="flex items-center justify-between gap-1 mb-1">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <span
@@ -240,16 +249,54 @@ export function RecentNotificationsModal({
                         >
                           {notification.message}
                         </p>
+
+                        {/* Interactive prompt if attached to a concern */}
+                        {notification.concernId && (
+                          <div className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-sky-600 dark:text-sky-400 group-hover:underline">
+                            <span>Open ticket</span>
+                            <ExternalLinkIcon className="h-3 w-3" />
+                          </div>
+                        )}
                       </div>
 
-                      {/* Unread Indicator Glow Dot */}
-                      {!notification.read && (
-                        <span
-                          className="mt-1.5 h-2 w-2 rounded-full bg-sky-500 dark:bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(14,165,233,0.6)] dark:shadow-[0_0_8px_rgba(6,182,212,0.9)]"
-                          aria-hidden
-                        />
-                      )}
-                    </button>
+                      {/* Quick Actions & Unread Indicator */}
+                      <div className="flex items-center gap-1 shrink-0 self-center">
+                        {/* Hover Quick Actions */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void onMarkRead(notification.id, !notification.read);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition-all"
+                          title={notification.read ? 'Mark as unread' : 'Mark as read'}
+                        >
+                          <CheckIcon className="h-3.5 w-3.5" />
+                        </button>
+
+                        {onDeleteNotification && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void onDeleteNotification(notification.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+                            title="Delete notification"
+                          >
+                            <Trash2Icon className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+
+                        {/* Unread Indicator Glow Dot */}
+                        {!notification.read && (
+                          <span
+                            className="h-2 w-2 rounded-full bg-sky-500 dark:bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(14,165,233,0.6)] dark:shadow-[0_0_8px_rgba(6,182,212,0.9)]"
+                            aria-hidden
+                          />
+                        )}
+                      </div>
+                    </div>
                   );
                 })
               )}

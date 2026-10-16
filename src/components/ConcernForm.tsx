@@ -171,14 +171,14 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
   ];
 
   return (
-    <div className="glass-panel p-5 sm:p-7 md:p-9 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl animate-fade-in w-full transition-all">
+    <div className="glass-panel p-5 sm:p-7 md:p-9 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-dark-900/95 shadow-xl shadow-slate-900/5 dark:shadow-2xl animate-fade-in w-full transition-all">
       {/* Header */}
-      <div className="mb-6 sm:mb-7 pb-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="mb-6 sm:mb-7 pb-5 border-b border-slate-200/90 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Submit a Concern
           </h1>
-          <p className="form-helper text-xs sm:text-sm text-gray-400 mt-1 leading-relaxed">
+          <p className="form-helper text-xs sm:text-sm text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
             Provide the details of your issue or request below. Your concern will be reviewed and routed to the proper department.
           </p>
         </div>
@@ -186,14 +186,14 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Compact Student Identity Strip */}
-        <div className="submit-identity-strip p-3.5 sm:p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="submit-identity-strip p-3.5 sm:p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.03]">
           <div className="flex items-center gap-3 min-w-0">
             {/* Student Avatar */}
             {user.profilePicture ? (
               <img
                 src={user.profilePicture}
                 alt={user.name}
-                className="h-10 w-10 rounded-full object-cover shrink-0 shadow-md shadow-sky-500/15 ring-2 ring-white/10"
+                className="h-10 w-10 rounded-full object-cover shrink-0 shadow-md shadow-sky-500/15 ring-2 ring-slate-200 dark:ring-white/10"
               />
             ) : (
               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 via-sky-600 to-cyan-500 text-white font-bold text-xs uppercase flex items-center justify-center shrink-0 shadow-md shadow-sky-500/15">
@@ -207,23 +207,23 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
 
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
-                <span className="student-name text-sm font-bold text-white tracking-tight truncate">
+                <span className="student-name text-sm font-bold text-slate-900 dark:text-white tracking-tight truncate">
                   {user.name}
                 </span>
-                <span className="student-dept-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                <span className="student-dept-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20">
                   {user.course || user.department || 'BSIT / CITE'}
                 </span>
               </div>
-              <div className="flex flex-wrap items-center gap-x-2 text-xs text-gray-400 mt-0.5">
+              <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500 dark:text-gray-400 mt-0.5">
                 <span className="student-id font-mono">ID: {user.studentId || '2023-01172'}</span>
-                <span className="text-gray-500 hidden sm:inline">•</span>
+                <span className="text-slate-400 dark:text-gray-500 hidden sm:inline">•</span>
                 <span className="student-email truncate max-w-[200px] sm:max-w-xs">{user.email}</span>
               </div>
             </div>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 shrink-0 self-start sm:self-center">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-500/20 shrink-0 self-start sm:self-center">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
             Verified Student
           </div>
         </div>
@@ -231,15 +231,15 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
         {/* Concern Title */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="form-label text-sm font-bold text-white flex items-center gap-1" htmlFor="concern-title">
+            <label className="form-label text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1" htmlFor="concern-title">
               <span>What can we help you with?</span>
-              <span className="text-rose-400">*</span>
+              <span className="text-rose-500">*</span>
             </label>
-            <span className="text-xs text-gray-400 font-mono tabular-nums">
+            <span className="text-xs text-slate-400 dark:text-gray-400 font-mono tabular-nums">
               {title.length}/100
             </span>
           </div>
-          <p className="form-helper text-xs text-gray-400">
+          <p className="form-helper text-xs text-slate-500 dark:text-gray-400">
             Provide a clear, descriptive headline so the assigned office understands your issue instantly.
           </p>
           <div className="relative">
@@ -252,7 +252,7 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Missing grade in CS 201 Midterm, or Broken Air Conditioner in Room 304..."
               required
-              className="form-input-field w-full px-4 py-3 rounded-xl bg-dark-800/80 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-inner"
+              className="form-input-field w-full px-4 py-3 rounded-xl bg-white dark:bg-dark-800/80 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-xs"
             />
           </div>
         </div>
@@ -260,15 +260,15 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
         {/* Detailed Description */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="form-label text-sm font-bold text-white flex items-center gap-1" htmlFor="concern-desc">
+            <label className="form-label text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1" htmlFor="concern-desc">
               <span>Detailed Description & Context</span>
-              <span className="text-rose-400">*</span>
+              <span className="text-rose-500">*</span>
             </label>
-            <span className="text-xs text-gray-400 font-mono tabular-nums">
+            <span className="text-xs text-slate-400 dark:text-gray-400 font-mono tabular-nums">
               {description.length} characters
             </span>
           </div>
-          <p className="form-helper text-xs text-gray-400">
+          <p className="form-helper text-xs text-slate-500 dark:text-gray-400">
             Share all specific details (course codes, professor or staff names, room locations, and requested outcome) so we can route and resolve this without delays.
           </p>
           <textarea
@@ -278,7 +278,7 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
             onChange={(e) => setDescription(e.target.value)}
             required
             rows={5}
-            className="form-input-field w-full px-4 py-3 rounded-xl bg-dark-800/80 border border-white/10 text-white placeholder-gray-500 text-sm leading-relaxed focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-inner custom-scrollbar"
+            className="form-input-field w-full px-4 py-3 rounded-xl bg-white dark:bg-dark-800/80 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 text-sm leading-relaxed focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all shadow-xs custom-scrollbar"
             placeholder="Describe what occurred, who you spoke with, when it took place, and how the department can assist you..."
           />
         </div>
@@ -287,10 +287,10 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
         <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between">
             <div>
-              <label className="form-label text-sm font-bold text-white block">
+              <label className="form-label text-sm font-bold text-slate-900 dark:text-white block">
                 Urgency & Turnaround Expectations
               </label>
-              <p className="form-helper text-xs text-gray-400 mt-0.5">
+              <p className="form-helper text-xs text-slate-500 dark:text-gray-400 mt-0.5">
                 Choose the priority that best reflects how time-sensitive your inquiry is.
               </p>
             </div>
@@ -308,7 +308,7 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
                   className={`priority-card p-3.5 rounded-xl border text-left flex flex-col justify-between min-h-[84px] cursor-pointer touch-manipulation transition-all active:scale-[0.98] ${
                     isSelected
                       ? `${p.selectedClass} ${p.activeBorder} ${p.activeBg} ${p.activeText} ${p.activeShadow} shadow-md`
-                      : 'priority-card--unselected bg-white/[0.02] border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20 hover:bg-white/[0.04]'
+                      : 'priority-card--unselected bg-white dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/[0.04] shadow-xs'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-1">
@@ -324,7 +324,7 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
                     {isSelected ? (
                       <CheckCircle2Icon className="h-4 w-4 shrink-0 text-current" />
                     ) : (
-                      <span className="h-4 w-4 rounded-full border border-gray-600 dark:border-gray-500 opacity-40 shrink-0" />
+                      <span className="h-4 w-4 rounded-full border border-slate-300 dark:border-gray-500 opacity-60 shrink-0" />
                     )}
                   </div>
                   <div className="mt-1 space-y-0.5">
@@ -344,14 +344,14 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
         <div className="space-y-2 pt-1">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <label className="form-label text-sm font-bold text-white block">
-                Supporting Documents & Evidence <span className="text-gray-400 text-xs font-normal">(Optional)</span>
+              <label className="form-label text-sm font-bold text-slate-900 dark:text-white block">
+                Supporting Documents & Evidence <span className="text-slate-400 dark:text-gray-400 text-xs font-normal">(Optional)</span>
               </label>
-              <p className="form-helper text-xs text-gray-400 mt-0.5">
+              <p className="form-helper text-xs text-slate-500 dark:text-gray-400 mt-0.5">
                 Attach official forms, grade slips, medical certificates, or photos (PNG, JPG, PDF up to 10MB each).
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-500/20 shrink-0 self-start sm:self-auto">
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-200 dark:border-cyan-500/20 shrink-0 self-start sm:self-auto">
               <ShieldCheckIcon className="h-3.5 w-3.5" /> AI Authenticity Check Active
             </span>
           </div>
@@ -366,19 +366,19 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
         </div>
 
         {/* Actions Toolbar */}
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-white/10 mt-8">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-slate-200/90 dark:border-white/10 mt-8">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleSaveDraft}
               disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 border border-white/10 transition-colors flex items-center justify-center gap-1.5 touch-manipulation disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 border border-slate-200 dark:border-white/10 transition-colors flex items-center justify-center gap-1.5 touch-manipulation disabled:opacity-50"
             >
               <BookmarkIcon className="h-4 w-4" />
               <span>Save Draft</span>
             </button>
             {draftSavedMessage && (
-              <span className="text-xs text-emerald-400 flex items-center gap-1 animate-fade-in font-medium">
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-fade-in font-medium">
                 <CheckIcon className="h-3.5 w-3.5" /> Draft saved
               </span>
             )}
@@ -389,7 +389,7 @@ export function ConcernForm({ user, onSubmit, onCancel }: ConcernFormProps) {
               type="button"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="min-h-[44px] px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-center border border-white/10 sm:border-transparent touch-manipulation disabled:opacity-50"
+              className="min-h-[44px] px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-center border border-slate-200 dark:border-white/10 sm:border-transparent touch-manipulation disabled:opacity-50"
             >
               Cancel
             </button>

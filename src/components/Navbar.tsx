@@ -10,8 +10,10 @@ interface NavbarProps {
   onToggleMobileSidebar?: () => void;
   unreadCount?: number;
   notifications?: Notification[];
-  onMarkNotificationRead?: (id: string) => void | Promise<void>;
+  onMarkNotificationRead?: (id: string, read?: boolean) => void | Promise<void>;
   onMarkAllNotificationsRead?: () => void | Promise<void>;
+  onDeleteNotification?: (id: string) => void | Promise<void>;
+  onSelectConcern?: (concernId: string) => void;
   onViewAllNotifications?: () => void;
   onNotificationClick?: () => void;
   activeTab?: string;
@@ -25,6 +27,8 @@ export function Navbar({
   notifications = [],
   onMarkNotificationRead,
   onMarkAllNotificationsRead,
+  onDeleteNotification,
+  onSelectConcern,
   onViewAllNotifications,
   onNotificationClick,
   activeTab
@@ -234,8 +238,10 @@ export function Navbar({
             isOpen={isNotificationModalOpen}
             onClose={() => setIsNotificationModalOpen(false)}
             notifications={notifications}
-            onMarkRead={(id) => onMarkNotificationRead?.(id)}
+            onMarkRead={(id, read) => onMarkNotificationRead?.(id, read)}
             onMarkAllRead={onMarkAllNotificationsRead}
+            onDeleteNotification={onDeleteNotification}
+            onSelectConcern={onSelectConcern}
             onViewAll={() => {
               setIsNotificationModalOpen(false);
               if (onViewAllNotifications) {
@@ -246,7 +252,7 @@ export function Navbar({
                 onNavigate('notifications');
               }
             }}
-            maxRecent={5}
+            maxRecent={6}
           />
         </div>
       </div>

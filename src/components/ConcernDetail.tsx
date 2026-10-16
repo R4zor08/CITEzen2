@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { Concern, ConcernAttachment, User, ConcernStatus } from '../types';
+import { Concern, ConcernAttachment, User, ConcernStatus, Priority } from '../types';
 import { formatFileSize, inferMimeFromDataUrl } from '../lib/files';
 import { StatusBadge, PriorityBadge } from './StatusBadge';
 import { departmentsList } from '../data/mockData';
@@ -22,7 +22,8 @@ import {
   ArrowLeftIcon,
   SparklesIcon,
   CopyIcon,
-  CheckIcon
+  CheckIcon,
+  AlertTriangleIcon
 } from 'lucide-react';
 import { CustomSelect } from './CustomSelect';
 
@@ -165,6 +166,142 @@ export function ConcernDetail({
     }).format(new Date(dateString));
   };
 
+  const currentPriority = (concern?.priority?.toLowerCase() as Priority) || 'medium';
+
+  const priorityThemeConfig: Record<
+    Priority,
+    {
+      label: string;
+      icon: React.ComponentType<{ className?: string }>;
+      modalContainer: string;
+      ambientGlow: string;
+      topBanner: string;
+      bannerIconColor: string;
+      headerBg: string;
+      ticketBadge: string;
+      ticketHash: string;
+      ticketCopy: string;
+      discussionHeader: string;
+      discussionIcon: string;
+      discussionBadge: string;
+      composerWrapper: string;
+      composerInput: string;
+      sendButton: string;
+    }
+  > = {
+    urgent: {
+      label: 'Urgent Priority Concern · Immediate Attention Required',
+      icon: AlertTriangleIcon,
+      modalContainer:
+        'border-2 border-red-500/90 shadow-2xl shadow-red-500/30 ring-2 ring-red-500/40 bg-white/95 dark:bg-[#150a0e]/95',
+      ambientGlow: 'bg-red-600/15 dark:bg-rose-600/20',
+      topBanner:
+        'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white border-b border-red-400/40',
+      bannerIconColor: 'text-amber-200 animate-pulse',
+      headerBg:
+        'bg-red-500/10 dark:bg-rose-950/40 border-b border-red-200 dark:border-rose-900/50',
+      ticketBadge:
+        'bg-red-100/90 dark:bg-rose-950/60 border border-red-300 dark:border-rose-700/60 text-red-700 dark:text-rose-200 hover:border-red-500',
+      ticketHash: 'text-red-600 dark:text-rose-400 font-bold',
+      ticketCopy: 'text-red-400 group-hover:text-red-600',
+      discussionHeader:
+        'border-red-200/80 dark:border-rose-900/40 bg-red-50/40 dark:bg-rose-950/20',
+      discussionIcon: 'text-red-600 dark:text-rose-400',
+      discussionBadge:
+        'bg-red-100/80 dark:bg-rose-950/50 text-red-700 dark:text-rose-300 border-red-200 dark:border-rose-800/50',
+      composerWrapper:
+        'border-red-200/80 dark:border-rose-900/40 bg-red-50/30 dark:bg-rose-950/20',
+      composerInput:
+        'border-red-300 dark:border-rose-900/60 focus:border-red-500 focus:ring-2 focus:ring-red-500/20',
+      sendButton:
+        'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 shadow-red-500/25'
+    },
+    high: {
+      label: 'High Priority Concern · Expedited Attention Required',
+      icon: AlertTriangleIcon,
+      modalContainer:
+        'border-2 border-yellow-500/90 dark:border-yellow-500/80 shadow-2xl shadow-yellow-500/25 ring-2 ring-yellow-500/40 bg-white/95 dark:bg-[#15130a]/95',
+      ambientGlow: 'bg-yellow-500/15 dark:bg-yellow-600/20',
+      topBanner:
+        'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-slate-950 border-b border-yellow-400/50',
+      bannerIconColor: 'text-amber-950 animate-pulse',
+      headerBg:
+        'bg-yellow-500/10 dark:bg-yellow-950/40 border-b border-yellow-200 dark:border-yellow-900/50',
+      ticketBadge:
+        'bg-yellow-100/90 dark:bg-yellow-950/60 border border-yellow-300 dark:border-yellow-700/60 text-yellow-800 dark:text-yellow-200 hover:border-yellow-500',
+      ticketHash: 'text-yellow-600 dark:text-yellow-400 font-bold',
+      ticketCopy: 'text-yellow-500 group-hover:text-yellow-700',
+      discussionHeader:
+        'border-yellow-200/80 dark:border-yellow-900/40 bg-yellow-50/40 dark:bg-yellow-950/20',
+      discussionIcon: 'text-yellow-600 dark:text-yellow-400',
+      discussionBadge:
+        'bg-yellow-100/80 dark:bg-yellow-950/50 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800/50',
+      composerWrapper:
+        'border-yellow-200/80 dark:border-yellow-900/40 bg-yellow-50/30 dark:bg-yellow-950/20',
+      composerInput:
+        'border-yellow-300 dark:border-yellow-900/60 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20',
+      sendButton:
+        'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 shadow-yellow-500/25'
+    },
+    medium: {
+      label: 'Medium Priority Concern · Standard Review',
+      icon: AlertCircleIcon,
+      modalContainer:
+        'border-2 border-blue-500/80 dark:border-blue-500/80 shadow-2xl shadow-blue-500/20 ring-2 ring-blue-500/30 bg-white/95 dark:bg-[#0a0f18]/95',
+      ambientGlow: 'bg-blue-600/15 dark:bg-sky-600/20',
+      topBanner:
+        'bg-gradient-to-r from-blue-600 via-sky-600 to-blue-600 text-white border-b border-blue-400/40',
+      bannerIconColor: 'text-sky-200',
+      headerBg:
+        'bg-blue-500/10 dark:bg-blue-950/40 border-b border-blue-200 dark:border-blue-900/50',
+      ticketBadge:
+        'bg-blue-100/90 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-700/60 text-blue-700 dark:text-blue-200 hover:border-blue-500',
+      ticketHash: 'text-blue-600 dark:text-blue-400 font-bold',
+      ticketCopy: 'text-blue-400 group-hover:text-blue-600',
+      discussionHeader:
+        'border-blue-200/80 dark:border-blue-900/40 bg-blue-50/40 dark:bg-blue-950/20',
+      discussionIcon: 'text-blue-600 dark:text-blue-400',
+      discussionBadge:
+        'bg-blue-100/80 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/50',
+      composerWrapper:
+        'border-blue-200/80 dark:border-blue-900/40 bg-blue-50/30 dark:bg-blue-950/20',
+      composerInput:
+        'border-blue-300 dark:border-blue-900/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20',
+      sendButton:
+        'bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-blue-500/25'
+    },
+    low: {
+      label: 'Low Priority Concern · Regular Queue',
+      icon: CheckCircle2Icon,
+      modalContainer:
+        'border-2 border-emerald-500/80 dark:border-emerald-500/80 shadow-2xl shadow-emerald-500/20 ring-2 ring-emerald-500/30 bg-white/95 dark:bg-[#0a150e]/95',
+      ambientGlow: 'bg-emerald-600/15 dark:bg-teal-600/20',
+      topBanner:
+        'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white border-b border-emerald-400/40',
+      bannerIconColor: 'text-emerald-200',
+      headerBg:
+        'bg-emerald-500/10 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-900/50',
+      ticketBadge:
+        'bg-emerald-100/90 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-200 hover:border-emerald-500',
+      ticketHash: 'text-emerald-600 dark:text-emerald-400 font-bold',
+      ticketCopy: 'text-emerald-400 group-hover:text-emerald-600',
+      discussionHeader:
+        'border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20',
+      discussionIcon: 'text-emerald-600 dark:text-emerald-400',
+      discussionBadge:
+        'bg-emerald-100/80 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50',
+      composerWrapper:
+        'border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/20',
+      composerInput:
+        'border-emerald-300 dark:border-emerald-900/60 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20',
+      sendButton:
+        'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-500/25'
+    }
+  };
+
+  const theme = priorityThemeConfig[currentPriority] || priorityThemeConfig.medium;
+  const PriorityBannerIcon = theme.icon;
+
   return createPortal(
     <AnimatePresence mode="wait">
       {isOpen && concern ? (
@@ -191,29 +328,36 @@ export function ConcernDetail({
             role="dialog"
             aria-modal="true"
             aria-labelledby="concern-detail-title"
-            className="relative z-10 glass-panel pointer-events-auto flex flex-col w-full h-full min-h-0 max-h-[100dvh] md:h-auto md:max-h-[min(92vh,920px)] md:w-[min(84vw,1260px)] md:max-w-[84vw] rounded-none md:rounded-2xl overflow-hidden shadow-2xl shadow-sky-500/10 border border-white/10 pt-[max(0.5rem,env(safe-area-inset-top))] md:pt-0 pb-[env(safe-area-inset-bottom)] isolate"
+            className={`relative z-10 glass-panel pointer-events-auto flex flex-col w-full h-full min-h-0 max-h-[100dvh] md:h-auto md:max-h-[min(92vh,920px)] md:w-[min(84vw,1260px)] md:max-w-[84vw] rounded-none md:rounded-2xl overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))] md:pt-0 pb-[env(safe-area-inset-bottom)] isolate transition-all duration-300 ${theme.modalContainer}`}
             initial={{ opacity: 0, scale: isMdLayout ? 0.96 : 1 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: isMdLayout ? 0.96 : 1 }}
             transition={{ duration: 0.28, ease: [0.34, 1.02, 0.32, 1] }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Top Priority Alert Banner & Ambient Glow */}
+            <div className={`absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl pointer-events-none -z-10 ${theme.ambientGlow}`} />
+            <div className={`px-4 py-2 text-xs font-bold tracking-wider flex items-center justify-center gap-2 shadow-sm shrink-0 uppercase ${theme.topBanner}`}>
+              <PriorityBannerIcon className={`h-4 w-4 shrink-0 ${theme.bannerIconColor}`} />
+              <span>{theme.label}</span>
+            </div>
+
             {/* Header */}
-            <div className="concern-detail-header flex flex-col gap-2 sm:gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between px-4 py-3 sm:p-5 shrink-0 bg-white/[0.02]">
+            <div className={`concern-detail-header flex flex-col gap-2 sm:gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between px-4 py-3 sm:p-5 shrink-0 transition-colors ${theme.headerBg}`}>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
                 {/* Clean ticket badge with 1-click copy */}
                 <button
                   type="button"
                   onClick={handleCopyId}
-                  className="concern-ticket-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold tracking-wider cursor-pointer hover:border-sky-500/40 active:scale-95 transition-all group"
+                  className={`concern-ticket-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold tracking-wider cursor-pointer active:scale-95 transition-all group ${theme.ticketBadge}`}
                   title="Click to copy full concern ID"
                 >
-                  <span className="text-sky-500 font-bold">#</span>
+                  <span className={theme.ticketHash}>#</span>
                   <span>{concern.id.slice(-6).toUpperCase()}</span>
                   {copiedId ? (
                     <CheckIcon className="h-3 w-3 text-emerald-400 shrink-0" />
                   ) : (
-                    <CopyIcon className="h-3 w-3 text-gray-400 group-hover:text-sky-400 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <CopyIcon className={`h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity ${theme.ticketCopy}`} />
                   )}
                 </button>
 
@@ -693,14 +837,14 @@ export function ConcernDetail({
 
               {/* Right Column: Comments & Discussion Feed */}
               <div className="concern-discussion-panel w-full flex flex-1 flex-col min-h-0 max-md:min-h-[min(36svh,260px)] md:min-h-0 md:flex-1 md:min-w-0 md:max-w-[48%] overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex items-center justify-between shrink-0">
+                <div className={`px-4 py-3 border-b flex items-center justify-between shrink-0 transition-colors ${theme.discussionHeader}`}>
                   <div className="flex items-center gap-2">
-                    <MessageSquareIcon className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                    <MessageSquareIcon className={`h-4 w-4 ${theme.discussionIcon}`} />
                     <h3 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
                       Activity & Discussion
                     </h3>
                   </div>
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10">
+                  <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${theme.discussionBadge}`}>
                     {concern.comments.length + 1} events
                   </span>
                 </div>
@@ -791,13 +935,13 @@ export function ConcernDetail({
                 </div>
 
                 {/* Comment Input Composer */}
-                <div className="p-3 border-t border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] shrink-0 citezen-safe-bottom">
+                <div className={`p-3 border-t shrink-0 citezen-safe-bottom transition-colors ${theme.composerWrapper}`}>
                   <form onSubmit={handleAddComment} className="relative">
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Write a message or reply..."
-                      className="comment-input-box w-full bg-white dark:bg-dark-900 border border-slate-300 dark:border-white/10 rounded-xl pl-3.5 pr-12 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all resize-none custom-scrollbar min-h-[64px] max-md:min-h-[56px] shadow-sm"
+                      className={`comment-input-box w-full bg-white dark:bg-dark-900 border rounded-xl pl-3.5 pr-12 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none transition-all resize-none custom-scrollbar min-h-[64px] max-md:min-h-[56px] shadow-sm ${theme.composerInput}`}
                       rows={2}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -811,7 +955,7 @@ export function ConcernDetail({
                       type="submit"
                       disabled={!newComment.trim()}
                       aria-label="Send comment"
-                      className="absolute right-2 bottom-2.5 p-2 rounded-xl bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-md shadow-sky-500/25 disabled:opacity-40 transition-all active:scale-95 flex items-center justify-center touch-manipulation"
+                      className={`absolute right-2 bottom-2.5 p-2 rounded-xl text-white shadow-md disabled:opacity-40 transition-all active:scale-95 flex items-center justify-center touch-manipulation ${theme.sendButton}`}
                     >
                       <SendIcon className="h-4 w-4" />
                     </button>

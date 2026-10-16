@@ -241,11 +241,11 @@ function AttachmentThumbnail({ file }: { file: ConcernAttachment }) {
   }
 
   return (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-sky-500/10">
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-sky-50 dark:bg-sky-500/10">
       {isImage ? (
-        <ImageIcon className="h-6 w-6 text-cyan-400/80" />
+        <ImageIcon className="h-6 w-6 text-sky-600 dark:text-cyan-400/80" />
       ) : (
-        <FileTextIcon className="h-6 w-6 text-sky-400/80" />
+        <FileTextIcon className="h-6 w-6 text-sky-600 dark:text-sky-400/80" />
       )}
     </div>
   );
@@ -505,7 +505,7 @@ export function FileUploadZone({
 
   const dropZoneClass = (() => {
     if (disabled) {
-      return 'opacity-50 cursor-not-allowed border-white/10 bg-dark-800/60';
+      return 'opacity-50 cursor-not-allowed border-slate-200 dark:border-white/10 bg-slate-100/50 dark:bg-dark-800/60';
     }
     if (isProcessing && requireAuthenticityVerification) {
       return 'border-cyan-400/50 bg-cyan-500/5 shadow-[0_0_24px_rgba(34,211,238,0.12)]';
@@ -519,7 +519,7 @@ export function FileUploadZone({
     if (requireAuthenticityVerification && verifiedCount > 0) {
       return 'border-emerald-500/30 bg-emerald-500/[0.04] hover:border-emerald-400/50';
     }
-    return 'border-white/10 bg-dark-800/80 hover:border-purple-500/50 hover:bg-purple-500/[0.06]';
+    return 'border-slate-300 dark:border-white/10 bg-slate-50/70 dark:bg-dark-800/80 hover:border-sky-500/50 dark:hover:border-purple-500/50 hover:bg-sky-50/50 dark:hover:bg-purple-500/[0.06]';
   })();
 
   return (
@@ -612,35 +612,35 @@ export function FileUploadZone({
                 className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border transition-colors ${
                   requireAuthenticityVerification
                     ? 'border-cyan-500/25 bg-cyan-500/10 group-hover:border-cyan-400/40 group-hover:bg-cyan-500/15'
-                    : 'border-white/10 bg-white/5 group-hover:border-sky-500/40 group-hover:bg-sky-500/10'
+                    : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 group-hover:border-sky-500/40 group-hover:bg-sky-50 dark:group-hover:bg-sky-500/10'
                 }`}>
                 <UploadCloudIcon
                   className={`h-6 w-6 transition-colors ${
                     requireAuthenticityVerification
-                      ? 'text-cyan-300/90 group-hover:text-cyan-200'
-                      : 'text-gray-400 group-hover:text-sky-400'
+                      ? 'text-cyan-600 dark:text-cyan-300/90 group-hover:text-cyan-700 dark:group-hover:text-cyan-200'
+                      : 'text-slate-400 dark:text-gray-400 group-hover:text-sky-600 dark:group-hover:text-sky-400'
                   }`}
                 />
               </div>
             )}
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-slate-600 dark:text-gray-400">
               <span
                 className={`font-medium ${
                   requireAuthenticityVerification
-                    ? 'text-cyan-300 group-hover:text-cyan-200'
-                    : 'text-sky-400 group-hover:text-sky-300'
+                    ? 'text-cyan-600 dark:text-cyan-300 group-hover:text-cyan-700 dark:group-hover:text-cyan-200'
+                    : 'text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300'
                 }`}>
                 Choose a file
               </span>
-              <span className="text-gray-500"> or drag and drop</span>
+              <span className="text-slate-500 dark:text-gray-500"> or drag and drop</span>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-slate-400 dark:text-gray-500">
               {requireAuthenticityVerification
                 ? 'PNG or JPG · up to 10MB'
                 : 'PNG, JPG, or PDF · up to 10MB'}
             </p>
             {requireAuthenticityVerification ? (
-              <p className="text-[11px] text-gray-600">
+              <p className="text-[11px] text-slate-500 dark:text-gray-600">
                 {slotsLeft > 0
                   ? `${slotsLeft} slot${slotsLeft === 1 ? '' : 's'} remaining`
                   : 'Maximum files reached'}
@@ -690,15 +690,15 @@ export function FileUploadZone({
               key={`${file.name}-${index}`}
               className={`flex items-center gap-3 rounded-xl border p-2.5 sm:p-3 transition-colors ${
                 file.verified
-                  ? 'border-[var(--verify-success-border)] bg-[var(--verify-success-bg)]'
-                  : 'border-[var(--border-color)] bg-[var(--glass-bg)] hover:bg-[var(--glass-bg-hover)]'
+                  ? 'border-emerald-200 dark:border-[var(--verify-success-border)] bg-emerald-50/60 dark:bg-[var(--verify-success-bg)]'
+                  : 'border-slate-200 dark:border-[var(--border-color)] bg-white dark:bg-[var(--glass-bg)] hover:bg-slate-50 dark:hover:bg-[var(--glass-bg-hover)] shadow-xs'
               }`}>
               <AttachmentThumbnail file={file} />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-100 truncate">
+                <p className="text-sm font-medium text-slate-800 dark:text-gray-100 truncate">
                   {file.name}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-gray-500 mt-0.5">
                   {formatFileSize(file.size)}
                 </p>
                 {file.verified ? (
@@ -712,7 +712,7 @@ export function FileUploadZone({
                 type="button"
                 onClick={() => removeFile(index)}
                 disabled={disabled || isProcessing}
-                className="shrink-0 rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
+                className="shrink-0 rounded-lg p-2 text-slate-400 dark:text-gray-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-white disabled:opacity-40"
                 aria-label={`Remove ${file.name}`}>
                 <XIcon className="h-4 w-4" />
               </button>

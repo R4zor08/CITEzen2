@@ -14,6 +14,7 @@ interface DashboardLayoutProps {
   onLogout: () => void;
   onNavigate: (page: string) => void;
   concernsData: any;
+  onSelectConcern?: (concernId: string) => void;
   children: ReactNode;
 }
 export function DashboardLayout({
@@ -24,6 +25,7 @@ export function DashboardLayout({
   onLogout,
   onNavigate,
   concernsData,
+  onSelectConcern,
   children
 }: DashboardLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -65,8 +67,10 @@ export function DashboardLayout({
           unreadCount={concernsData?.unreadCount ?? 0}
           notifications={concernsData?.notifications ?? []}
           onMarkNotificationRead={concernsData?.markNotificationRead}
+          onDeleteNotification={concernsData?.deleteNotification}
           onMarkAllNotificationsRead={concernsData?.markAllNotificationsRead}
           onViewAllNotifications={() => onTabChange('notifications')}
+          onSelectConcern={onSelectConcern}
           activeTab={activeTab}
         />
         
@@ -97,8 +101,10 @@ export function DashboardLayout({
                     <NotificationPanel
                     notifications={concernsData.notifications}
                     onMarkRead={concernsData.markNotificationRead}
+                    onDeleteNotification={concernsData.deleteNotification}
                     onMarkAllRead={concernsData.markAllNotificationsRead}
-                    onClearAll={concernsData.clearAllNotifications} />
+                    onClearAll={concernsData.clearAllNotifications}
+                    onSelectConcern={onSelectConcern} />
                   
                   </div> :
 
