@@ -11,7 +11,7 @@ export function getApiBase(): string {
   return 'http://localhost:3001'.replace(/\/$/, '');
 }
 
-function getAuthToken(): string | null {
+export function getAuthToken(): string | null {
   try {
     return localStorage.getItem('citezen_token') || sessionStorage.getItem('citezen_token');
   } catch {
